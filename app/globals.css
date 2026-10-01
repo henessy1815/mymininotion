@@ -236,6 +236,7 @@ a.plain:hover { color: inherit; }
   font: 400 15px/1.75 var(--font-sans); color: var(--text-primary); field-sizing: content;
 }
 .editor-body::placeholder { color: var(--text-placeholder); }
+.editor-count { margin-top: var(--space-12); font-variant-numeric: tabular-nums; }
 
 .notfound { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 48px 24px; text-align: center; }
 

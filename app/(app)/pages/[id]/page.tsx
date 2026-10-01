@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Check, ChevronLeft, CircleAlert, FileX, LoaderCircle, Trash2 } from 'lucide-react';
 import { Button, IconButton } from '@/components/ds';
 import { DeleteDialog } from '@/components/shell';
 import { actions, usePage, type Page } from '@/lib/store';
-import { displayTitle, formatDate, formatDateTime } from '@/lib/format';
+import { displayTitle, formatCharCount, formatDate, formatDateTime } from '@/lib/format';
+import { countCharacters } from '@/lib/text';
 
 const AUTOSAVE_DELAY = 1000;
 
@@ -34,6 +35,7 @@ function Editor({ page, onDeleted }: { page: Page; onDeleted: () => void }) {
   const draft = useRef({ title: page.title, content: page.content });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const countId = useId();
 
   const save = () => {
     if (timer.current) clearTimeout(timer.current);
@@ -127,11 +129,13 @@ function Editor({ page, onDeleted }: { page: Page; onDeleted: () => void }) {
               value={content}
               placeholder="내용을 입력하세요"
               aria-label="내용"
+              aria-describedby={countId}
               onChange={(e) => {
                 setContent(e.target.value);
                 edit({ content: e.target.value });
               }}
             />
+            <CharCount id={countId} text={content} />
           </div>
         </div>
       </div>
@@ -166,6 +170,15 @@ function SaveState({ status, onRetry }: { status: SaveStatus; onRetry: () => voi
         다시 시도
       </Button>
     </span>
+  );
+}
+
+/** Linked by aria-describedby, not a live region, so typing is never interrupted. */
+function CharCount({ id, text }: { id: string; text: string }) {
+  return (
+    <div id={id} className="meta editor-count">
+      {formatCharCount(countCharacters(text))}
+    </div>
   );
 }
 

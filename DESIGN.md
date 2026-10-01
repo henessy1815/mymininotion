@@ -219,7 +219,7 @@
 
 `--space-0` · `2` · `4` · `6` · `8` · `10` · `12` · `14` · `16` · `20` · `24` · `32` · `40` · `48` (단위 px, 토큰명 숫자 = px)
 
-> ⚠️ 현재 `globals.css`는 spacing 토큰을 **한 번도 쓰지 않고** px를 직접 적는다. 값 자체는 대부분 스케일 안에 있다. 새 코드는 `var(--space-*)`를 쓴다.
+> ⚠️ 현재 `globals.css`는 spacing 토큰을 거의 쓰지 않고(`.editor-count`만 사용) px를 직접 적는다. 값 자체는 대부분 스케일 안에 있다. 새 코드는 `var(--space-*)`를 쓴다.
 
 **자주 쓰는 조합** `(관찰된 패턴)`
 
@@ -551,6 +551,7 @@ import { UserAvatar } from '@/components/shell';
 | `.alert` | 연빨강 배경 오류 박스 (로그인·이미지 업로드) |
 | `.mp-field` + `.mp-field-hint` | 테두리 입력 필드 + 글자 수 `.meta` + 힌트/오류 |
 | `.save-state` | 저장 중/저장됨/저장 실패 인디케이터 |
+| `.editor-count` | 에디터 본문 아래 글자 수 (`.meta`와 함께 사용, `margin-top: var(--space-12)`, `tabular-nums`) |
 | `.empty`, `.notfound` | 빈 상태, 찾을 수 없음 |
 | `.google-btn`, `.google-mark` | Google 로그인 버튼, 계정 표시 |
 
@@ -578,6 +579,7 @@ import { UserAvatar } from '@/components/shell';
 
 - 헤더(`.is-compact`): 뒤로(`ChevronLeft`) · breadcrumb `업무 / {제목}` (d-only) · spacer · `SaveState` · `.divider-v` · 삭제 `IconButton`.
 - 에디터 최대폭 720px, 테두리 없는 입력: 제목 `input`(28px, placeholder "제목 없음") → `.meta` "{일시} 수정 · {날짜} 생성" → 1px 구분선 → 본문 `textarea`(15px/1.75, `field-sizing: content`, placeholder "내용을 입력하세요").
+- 본문 `textarea` 바로 아래 `.meta .editor-count` 글자 수 `공백 포함 N자 · 공백 제외 M자`. 입력마다 즉시 갱신(자동 저장과 무관), 제목은 세지 않음, `aria-describedby`로 본문에 연결.
 - 새 글(제목·내용 모두 빈 값)이면 제목에 `autoFocus`. 제목에서 Enter → 본문으로 포커스.
 - 자동 저장: 입력 멈춘 뒤 1000ms debounce, 페이지를 떠날 때 미저장분 flush.
 - 1f: `DeleteDialog` → 삭제 후 `/`로 `replace`.
@@ -661,10 +663,11 @@ import { UserAvatar } from '@/components/shell';
 | `formatDate(ts)` | `M/D(요일)` | `9/28(월)` | 에디터 "생성" 날짜 |
 | `formatDateTime(ts)` | `M/D(요일) 오전\|오후 h:mm` | `9/28(월) 오후 3:12` | 목록·검색 결과·에디터 "수정" 일시 |
 | `displayTitle(title)` | 공백 제거 후 빈 값이면 `제목 없음` | — | 제목을 표시하는 모든 곳 |
+| `formatCharCount(count)` | `공백 포함 {n}자 · 공백 제외 {m}자` (`ko-KR` 천 단위 `,`) | `공백 포함 1,234자 · 공백 제외 1,050자` | 에디터 본문 글자 수 (`countCharacters` 결과) |
 
 - 연도는 표시하지 않는다. 월·일은 0을 채우지 않고, 분만 두 자리로 채운다. 12시간제 + 오전/오후.
 - 새 날짜 표기는 직접 만들지 말고 이 두 함수를 쓴다. 상대 시간("3분 전")은 현재 쓰지 않는다.
-- 숫자: 글자 수 `{n}/{max}`, 용량 `{n.n}MB`(소수 1자리), 파일 형식은 대문자 `JPG · PNG · WEBP`.
+- 숫자: 글자 수 `{n}/{max}`(별명), 글 내용 글자 수 `공백 포함 1,234자 · 공백 제외 1,050자`(grapheme 단위, `lib/text.ts`), 용량 `{n.n}MB`(소수 1자리), 파일 형식은 대문자 `JPG · PNG · WEBP`.
 
 ---
 
@@ -681,6 +684,7 @@ import { UserAvatar } from '@/components/shell';
 | 랜드마크 | `header.topbar`, `nav.sidebar aria-label="사이드바"`, `main.sheet` |
 | 입력 이름 | 모든 입력에 `aria-label` (명령어 입력, 글 제목 검색, 제목, 내용, 별명) |
 | 상태 알림 | `SaveState` `role="status"` / 실패 `role="alert"`, `.alert` `role="alert"` |
+| 보조 설명 | 내용 `textarea`의 `aria-describedby` → 글자 수 (라이브 영역 아님, 입력마다 낭독하지 않음) |
 | 다이얼로그 | `role="alertdialog"`, `aria-modal`, `aria-labelledby`, Esc 닫기, 확정 버튼 `autoFocus` |
 | 검색 결과 | `role="listbox"`/`option` + `aria-selected`, ↑↓/Enter/Esc |
 | 한글 조합 | Enter 처리 시 `e.nativeEvent.isComposing` 확인 (IME 조합 중 제출 방지) |
@@ -755,7 +759,7 @@ import { UserAvatar } from '@/components/shell';
 | 그림자 | `--shadow-panel` · `--shadow-xs` · `--shadow-md` · `--shadow-lg` |
 | 모션 | `--dur-fast` 100 · `--dur-base` 160 · `--ease-standard` |
 
-**정의만 있고 쓰지 않는 토큰 (Teamchat 잔재)**: `--gray-700`, `--mint-*`, `--purple-100/300`, `--green-500`, `--pink-300`, `--bg-pressed`, `--bg-rail-selected`, `--bg-notice`, `--bg-tooltip`, `--bg-badge`, `--text-inverse-muted`, `--accent`, `--status-online`, `--status-alert`, `--font-mono`, `--fs-*`, `--fw-*`, `--lh-*`, `--ls-tight`, `--type-micro`, `--space-*` 전체, `--radius-10/16/20`, `--rail-w`, `--detail-w`, `--notice-h`, `--shadow-none`, `--shadow-sm`, `--dur-slow`, `--ease-out`. 삭제하지 말고, 새 UI가 해당 역할을 필요로 할 때 이 토큰부터 쓴다.
+**정의만 있고 쓰지 않는 토큰 (Teamchat 잔재)**: `--gray-700`, `--mint-*`, `--purple-100/300`, `--green-500`, `--pink-300`, `--bg-pressed`, `--bg-rail-selected`, `--bg-notice`, `--bg-tooltip`, `--bg-badge`, `--text-inverse-muted`, `--accent`, `--status-online`, `--status-alert`, `--font-mono`, `--fs-*`, `--fw-*`, `--lh-*`, `--ls-tight`, `--type-micro`, `--space-*`(`--space-12` 제외), `--radius-10/16/20`, `--rail-w`, `--detail-w`, `--notice-h`, `--shadow-none`, `--shadow-sm`, `--dur-slow`, `--ease-out`. 삭제하지 말고, 새 UI가 해당 역할을 필요로 할 때 이 토큰부터 쓴다.
 
 ## 부록 B. 파일 맵
 
@@ -769,11 +773,12 @@ import { UserAvatar } from '@/components/shell';
 | `components/shell.tsx` | `AppShell`, `SearchBox`, `DeleteDialog`, `UserAvatar` |
 | `app/(app)/layout.tsx` | 인증 화면을 `AppShell`로 감쌈 |
 | `app/(app)/page.tsx` | 업무 페이지 + `CommandInput` (1c/1d/1h) |
-| `app/(app)/pages/[id]/page.tsx` | 글 상세 + `SaveState` + `NotFound` (1e/1f/1i) |
+| `app/(app)/pages/[id]/page.tsx` | 글 상세 + `SaveState` + `CharCount` + `NotFound` (1e/1f/1i) |
 | `app/(app)/mypage/page.tsx` | 마이 페이지 (1g) |
 | `app/login/page.tsx` | 로그인 (1a/1b) |
 | `lib/commands.ts` | 슬래시 명령어 레지스트리 (`COMMANDS`, `matchCommands`) — 새 명령어는 여기에 항목 추가 |
-| `lib/format.ts` | 날짜·제목 표기 |
+| `lib/format.ts` | 날짜·제목·글자 수 표기 |
+| `lib/text.ts` | 글자 수 계산 (`countCharacters`, grapheme 단위) |
 | `lib/store.ts` | localStorage 기반 데이터 레이어 |
 
 ---
@@ -784,7 +789,7 @@ import { UserAvatar } from '@/components/shell';
 
 | # | 분류 | 내용 | 위치 |
 | --- | --- | --- | --- |
-| 1 | 간격 토큰 미사용 | `--space-*`가 코드 전체에서 0회 사용. 모든 padding·gap·margin이 px 하드코딩 | `app/globals.css` 전반 (예: 18, 85, 104, 107, 170, 225, 251), 인라인 `marginTop` (`app/login/page.tsx:35,36,49,58`) |
+| 1 | 간격 토큰 미사용 | `--space-*`가 `.editor-count` 1곳 외에는 쓰이지 않음. 나머지 padding·gap·margin이 px 하드코딩 | `app/globals.css` 전반 (예: 18, 85, 104, 107, 170, 225, 251), 인라인 `marginTop` (`app/login/page.tsx:35,36,49,58`) |
 | 2 | hex·rgba 하드코딩 | `#000`(Primary hover), `#d23a51`(Danger hover), `#fff`(로고 마크 ×2), `rgba(0,0,0,.28)`(다이얼로그 딤) | `app/globals.css:30, 36, 93, 149, 243` |
 | 3 | primitive 직접 참조 | hover에 `--gray-25` (semantic 없음) | `app/globals.css:32, 62, 91, 101, 157, 200` |
 | 4 | primitive 직접 참조 | `--red-500`을 `--text-danger`/`--status-alert` 대신 사용, `--red-100`은 semantic 없음 | `app/globals.css:35, 165, 167, 223` |
