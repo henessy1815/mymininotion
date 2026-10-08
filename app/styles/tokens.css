@@ -47,6 +47,9 @@
 --bg-tooltip:var(--gray-800);
 --bg-badge:var(--gray-100);
 --bg-accent-soft:var(--purple-50);
+/* mini notion — skeleton loading */
+--bg-skeleton:var(--gray-100);
+--bg-skeleton-shine:rgba(255,255,255,.6);
 
 --text-primary:var(--gray-900);
 --text-secondary:var(--gray-600);
@@ -108,6 +111,9 @@
 --header-h:52px;
 --row-h:32px;
 --control-sm:28px;--control-md:36px;--control-lg:40px;
+/* mini notion — page cover */
+--cover-h:200px;
+--cover-h-sm:140px;
 }
 
 /* effects.css */
@@ -124,6 +130,7 @@
 --dur-fast:100ms;
 --dur-base:160ms;
 --dur-slow:240ms;
+--dur-shimmer:1400ms; /* mini notion — skeleton sweep */
 }
 
 /* base.css */

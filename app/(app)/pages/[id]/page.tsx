@@ -4,15 +4,18 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Check, ChevronLeft, CircleAlert, FileX, LoaderCircle, Trash2 } from 'lucide-react';
-import { Button, IconButton } from '@/components/ds';
+import { Button, IconButton, Skeleton } from '@/components/ds';
 import { DeleteDialog } from '@/components/shell';
 import { actions, usePage, type Page } from '@/lib/store';
 import { displayTitle, formatCharCount, formatDate, formatDateTime } from '@/lib/format';
 import { countCharacters } from '@/lib/text';
 
 const AUTOSAVE_DELAY = 1000;
+const COVER_URL = 'https://cataas.com/cat/cute';
+const COVER_TIMEOUT = 10_000;
 
 type SaveStatus = 'saving' | 'saved' | 'failed';
+type CoverState = 'loading' | 'loaded' | 'failed';
 
 /** 1e 글 상세 · 1f 삭제 확인 · 1i 모바일 */
 export default function PageDetail() {
@@ -100,6 +103,7 @@ function Editor({ page, onDeleted }: { page: Page; onDeleted: () => void }) {
       </div>
 
       <div className="sheet-scroll">
+        <Cover />
         <div className="editor-wrap">
           <div className="editor">
             <input
@@ -170,6 +174,29 @@ function SaveState({ status, onRetry }: { status: SaveStatus; onRetry: () => voi
         다시 시도
       </Button>
     </span>
+  );
+}
+
+/** Decorative random cat. Requested fresh on every open and never saved with the page. */
+function Cover() {
+  // The query string makes each open a new request instead of the browser's cached cat.
+  const [src] = useState(() => `${COVER_URL}?t=${Date.now()}`);
+  const [state, setState] = useState<CoverState>('loading');
+
+  useEffect(() => {
+    if (state !== 'loading') return;
+    const timer = setTimeout(() => setState('failed'), COVER_TIMEOUT);
+    return () => clearTimeout(timer);
+  }, [state]);
+
+  return (
+    <div className="page-cover" data-state={state} data-testid="page-cover" aria-hidden="true">
+      {state === 'loading' && <Skeleton />}
+      {state !== 'failed' && (
+        // eslint-disable-next-line @next/next/no-img-element -- next/image's optimizer caches by URL, which would pin a single cat
+        <img src={src} alt="" onLoad={() => setState('loaded')} onError={() => setState('failed')} />
+      )}
+    </div>
   );
 }
 

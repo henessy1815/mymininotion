@@ -1,9 +1,9 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { CircleAlert } from 'lucide-react';
-import { actions, useStore } from '@/lib/store';
+import { authActions, useAuth } from '@/lib/auth';
 
 const ERRORS: Record<string, string> = {
   cancelled: '로그인이 취소되었어요. 다시 시도해 주세요.',
@@ -20,9 +20,23 @@ export default function LoginPage() {
 }
 
 function Login() {
-  const { ready, user } = useStore();
+  const { ready, user } = useAuth();
   const router = useRouter();
-  const error = ERRORS[useSearchParams().get('error') ?? ''];
+  const [redirecting, setRedirecting] = useState(false);
+  const [startFailed, setStartFailed] = useState(false);
+  const errorParam = useSearchParams().get('error') ?? '';
+  const error = startFailed ? ERRORS.failed : ERRORS[errorParam];
+
+  const signIn = async () => {
+    setStartFailed(false);
+    setRedirecting(true);
+    try {
+      await authActions.signInWithGoogle();
+    } catch {
+      setStartFailed(true);
+      setRedirecting(false);
+    }
+  };
 
   useEffect(() => {
     if (ready && user) router.replace('/');
@@ -47,7 +61,7 @@ function Login() {
         )}
 
         <div style={{ width: '100%', marginTop: error ? 12 : 36 }}>
-          <button type="button" className="google-btn" disabled={!ready} onClick={() => actions.signInWithGoogle()}>
+          <button type="button" className="google-btn" disabled={!ready || redirecting} onClick={signIn}>
             <span className="google-mark">G</span>Google로 로그인
           </button>
         </div>

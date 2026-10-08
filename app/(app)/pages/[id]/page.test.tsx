@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { nav } from '@/test/navigation';
@@ -9,10 +9,7 @@ vi.mock('next/navigation', () => import('@/test/navigation'));
 async function renderPage({ content }: { content: string }) {
   localStorage.setItem(
     'mini-notion:v1',
-    JSON.stringify({
-      user: { email: 'me@example.com', nickname: '나', avatarUrl: null },
-      pages: [{ id: 'p1', title: '', content, createdAt: 1, updatedAt: 1 }],
-    }),
+    JSON.stringify({ pages: [{ id: 'p1', title: '', content, createdAt: 1, updatedAt: 1 }] }),
   );
   await loadStore();
   nav.params = { id: 'p1' };
@@ -110,5 +107,85 @@ describe('글 상세 — 내용 글자 수', () => {
     await user.type(contentBox(), '가{Enter}나');
 
     expect(charCount()!.textContent).toBe('공백 포함 3자 · 공백 제외 2자');
+  });
+});
+
+describe('글 상세 — 고양이 커버', () => {
+  const cover = () => screen.getByTestId('page-cover');
+  const coverImage = () => cover().querySelector('img');
+
+  it('sits above the title and starts as a skeleton while the cat photo is requested', async () => {
+    await renderPage({ content: '' });
+
+    const title = screen.getByRole('textbox', { name: '제목' });
+    expect(cover().compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(cover()).toHaveAttribute('data-state', 'loading');
+    expect(coverImage()!.getAttribute('src')).toMatch(/^https:\/\/cataas\.com\/cat\/cute\?/);
+  });
+
+  it('shows the photo once it loads', async () => {
+    await renderPage({ content: '' });
+
+    fireEvent.load(coverImage()!);
+
+    expect(cover()).toHaveAttribute('data-state', 'loaded');
+    expect(coverImage()).not.toBeNull();
+  });
+
+  it('falls back to a plain cover without a broken image when the request fails', async () => {
+    await renderPage({ content: '' });
+
+    fireEvent.error(coverImage()!);
+
+    expect(cover()).toHaveAttribute('data-state', 'failed');
+    expect(coverImage()).toBeNull();
+  });
+
+  it('gives up after 10 seconds instead of shimmering forever', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    await renderPage({ content: '' });
+
+    await act(() => vi.advanceTimersByTimeAsync(9_999));
+    expect(cover()).toHaveAttribute('data-state', 'loading');
+
+    await act(() => vi.advanceTimersByTimeAsync(1));
+    expect(cover()).toHaveAttribute('data-state', 'failed');
+    expect(coverImage()).toBeNull();
+  });
+
+  it('does not time out a photo that already loaded', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    await renderPage({ content: '' });
+
+    fireEvent.load(coverImage()!);
+    await act(() => vi.advanceTimersByTimeAsync(10_000));
+
+    expect(cover()).toHaveAttribute('data-state', 'loaded');
+  });
+
+  it('requests a new random cat each time the page is opened', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(1_000);
+    await renderPage({ content: '' });
+    const first = coverImage()!.getAttribute('src');
+
+    cleanup();
+    vi.setSystemTime(2_000);
+    await renderPage({ content: '' });
+
+    expect(coverImage()!.getAttribute('src')).not.toBe(first);
+  });
+
+  it('is decorative and hidden from screen readers', async () => {
+    await renderPage({ content: '' });
+
+    expect(cover()).toHaveAttribute('aria-hidden', 'true');
+    expect(coverImage()).toHaveAttribute('alt', '');
+  });
+
+  it('keeps the title focused on a new page while the cover loads', async () => {
+    await renderPage({ content: '' });
+
+    expect(screen.getByRole('textbox', { name: '제목' })).toHaveFocus();
   });
 });

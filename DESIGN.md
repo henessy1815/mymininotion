@@ -110,7 +110,9 @@
 | `--bg-pressed` | `rgba(0,0,0,.07)` | 정의만 있음 (미사용) |
 | `--bg-selected` | `--gray-100` | 선택 상태 (`.sb-item.is-selected`, `.icon-btn.is-active`, 검색·명령 결과의 활성 항목) |
 | `--bg-inverse` | `--gray-850` | Primary 버튼 |
-| `--bg-accent-soft` | `--purple-50` | 보라 톤 배경 (빈 상태 일러스트) |
+| `--bg-accent-soft` | `--purple-50` | 보라 톤 배경 (빈 상태 일러스트, 글 커버 기본 바탕·실패 대체) |
+| `--bg-skeleton` | `--gray-100` | 스켈레톤 자리표시 바탕 (`.skeleton`) |
+| `--bg-skeleton-shine` | `rgba(255,255,255,.6)` | 스켈레톤 시머의 빛 띠 (그라디언트 중앙색) |
 | `--bg-rail-selected`, `--bg-notice`, `--bg-tooltip`, `--bg-badge` | — | Teamchat 잔재, 미사용 |
 
 **텍스트**
@@ -156,7 +158,7 @@
 
 - ❌ hex·rgba 하드코딩 (`#000`, `#fff` 등) — semantic 토큰이 없으면 `tokens.css`에 먼저 추가한다.
 - ❌ primitive 직접 참조 (`var(--gray-25)`, `var(--red-500)`) — semantic으로 매핑된 토큰을 쓴다.
-- ❌ 새 브랜드 컬러·그라디언트 추가.
+- ❌ 새 브랜드 컬러·그라디언트 추가. 예외: `.skeleton`의 시머 빛 띠(`transparent → --bg-skeleton-shine → transparent`)만 허용한다.
 - ❌ 색만으로 상태 전달 — 저장 실패처럼 아이콘(`CircleAlert`)과 텍스트를 함께 둔다.
 
 ---
@@ -219,7 +221,7 @@
 
 `--space-0` · `2` · `4` · `6` · `8` · `10` · `12` · `14` · `16` · `20` · `24` · `32` · `40` · `48` (단위 px, 토큰명 숫자 = px)
 
-> ⚠️ 현재 `globals.css`는 spacing 토큰을 거의 쓰지 않고(`.editor-count`만 사용) px를 직접 적는다. 값 자체는 대부분 스케일 안에 있다. 새 코드는 `var(--space-*)`를 쓴다.
+> ⚠️ 현재 `globals.css`는 spacing 토큰을 거의 쓰지 않고(`.editor-count`, 커버 아래 `.editor-wrap` 상단 여백만 사용) px를 직접 적는다. 값 자체는 대부분 스케일 안에 있다. 새 코드는 `var(--space-*)`를 쓴다.
 
 **자주 쓰는 조합** `(관찰된 패턴)`
 
@@ -254,6 +256,7 @@
 | `--header-h` | 52px | `.sheet-header` |
 | `--row-h` | 32px | `.sb-item` |
 | `--control-sm` / `md` / `lg` | 28 / 36 / 40px | `Button` size `sm` / `md` / `lg` |
+| `--cover-h` / `--cover-h-sm` | 200 / 140px | 글 상세 커버 높이 (데스크톱 / 767px 이하) |
 | `--rail-w` 56px, `--detail-w` 296px, `--notice-h` 40px | — | 미사용 (Teamchat 잔재) |
 
 **토큰 밖의 고정 치수** `(관찰된 패턴)`: pill·검색 입력 높이 32px, 목록 행 52px, 명령 입력창 48px, 명령 항목 44px, 검색 결과 행 40px, 마이 페이지 입력 40px(= `--control-lg`), Google 버튼 44px, 콘텐츠 최대폭 760px(업무) / 720px(에디터) / 600px(마이) / 400px(로그인 카드) / 380px(다이얼로그) / 320px(드롭다운).
@@ -298,7 +301,7 @@
 | 터치 타깃 | 헤더의 `IconButton`·링크는 `size={44}` (데스크톱 32) |
 | 검색 | 헤더 검색 아이콘 → 헤더 아래 `.m-search` 줄에 `SearchBox expanded` 전체폭 (그림자 대신 1px 보더) |
 | 목록 행 | 아이콘·삭제 버튼 숨김, 제목과 날짜를 세로로 쌓음, 제목 15px, 최소 높이 60px, hover 배경 없음 |
-| 에디터 | 패딩 `24px 20px 64px`, 제목 22px, "생성" 날짜 숨김 |
+| 에디터 | 패딩 `24px 20px 64px`, 제목 22px, "생성" 날짜 숨김. 커버 높이 `--cover-h-sm`, 커버 아래 상단 패딩 `--space-24` |
 | 삭제 | 목록에서는 삭제 불가, 글 상세 헤더의 삭제 버튼으로만 |
 
 ---
@@ -331,6 +334,7 @@
 | `--ease-standard` | `cubic-bezier(.2,0,0,1)` | `.btn` transition |
 | `--ease-out` | `cubic-bezier(0,0,.2,1)` | 미사용 |
 | `.spin` | `spin 1s linear infinite` | 로딩 아이콘(`LoaderCircle`) |
+| `--dur-shimmer` | 1400ms | `.skeleton::after` 시머(`shimmer` 키프레임, `transform: translateX` -100% → 100%, `--ease-standard`, 무한 반복). `prefers-reduced-motion: reduce`에서는 빛 띠를 숨겨 정적 자리표시만 남긴다 |
 
 **규칙**: transition은 `background`·`transform`에만 건다. 새 transition은 `var(--dur-*) var(--ease-standard)`를 함께 쓴다. 등장/퇴장 애니메이션은 현재 없다 (드롭다운·다이얼로그는 즉시 표시).
 
@@ -371,7 +375,7 @@
 | 모바일 뒤로가기 | 22 |
 | 빈 상태·NotFound 일러스트 | 40 (`strokeWidth={1.5}`) |
 
-**사용 중인 아이콘과 의미**: `LayoutList`(업무 페이지) · `CircleUserRound`(마이 페이지) · `FileText`(제목 있는 글) · `File`(제목 없는 글) · `FilePlus`(`/page` 명령) · `SquarePen`(명령 입력창) · `Search` · `Trash2`(삭제) · `ChevronLeft`(뒤로) · `ChevronDown`(섹션 접기) · `Check`(저장됨) · `LoaderCircle`(저장 중) · `CircleAlert`(오류) · `FileX`(글 없음) · `Upload` · `RotateCcw` · `LogOut`
+**사용 중인 아이콘과 의미**: `LayoutList`(업무 페이지) · `CircleUserRound`(마이 페이지) · `FileText`(제목 있는 글) · `File`(제목 없는 글) · `FilePlus`(`/page` 명령) · `SquarePen`(명령 입력창) · `Search` · `Trash2`(삭제) · `ChevronLeft`(뒤로) · `ChevronDown`(섹션 접기) · `Check`(저장됨) · `LoaderCircle`(저장 중·로그인 중) · `CircleAlert`(오류) · `FileX`(글 없음) · `LogOut`
 
 ---
 
@@ -395,15 +399,15 @@ import 경로: `@/components/ds` (원자), `@/components/shell` (조합)
 | variant | 배경 / 글자 / 보더 | 사용처 |
 | --- | --- | --- |
 | `primary` | `--bg-inverse` / `--text-inverse` | 폼 제출 (마이 페이지 별명 "저장") |
-| `secondary` | `--bg-surface` / `--text-primary` / `--border-default` | 일반 행동 ("이미지 변경", "로그아웃", "취소", "다시 시도") |
-| `ghost` | 투명 / `--text-primary` | 보조·되돌리기 행동 ("기본 이미지로") |
+| `secondary` | `--bg-surface` / `--text-primary` / `--border-default` | 일반 행동 ("로그아웃", "취소", "다시 시도") |
+| `ghost` | 투명 / `--text-primary` | 보조·되돌리기 행동 (현재 사용처 없음) |
 | `danger` | `--red-500` / `--text-inverse` | 삭제 확정 ("삭제") |
 
 ```tsx
 import { Button } from '@/components/ds';
-import { Upload } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
-<Button variant="secondary" icon={Upload} disabled={busy} onClick={pick}>이미지 변경</Button>
+<Button variant="secondary" icon={LogOut} onClick={signOut}>로그아웃</Button>
 <Button type="submit" size="lg" disabled={invalid || unchanged}>저장</Button>
 ```
 
@@ -551,9 +555,18 @@ import { UserAvatar } from '@/components/shell';
 | `.alert` | 연빨강 배경 오류 박스 (로그인·이미지 업로드) |
 | `.mp-field` + `.mp-field-hint` | 테두리 입력 필드 + 글자 수 `.meta` + 힌트/오류 |
 | `.save-state` | 저장 중/저장됨/저장 실패 인디케이터 |
+| `.page-cover` | 글 상세 상단 커버. `data-state="loading\|loaded\|failed"`에 따라 `Skeleton` → 사진(`object-fit: cover`) → `--bg-accent-soft` 단색. 높이 고정이라 상태가 바뀌어도 레이아웃 이동 없음 |
 | `.editor-count` | 에디터 본문 아래 글자 수 (`.meta`와 함께 사용, `margin-top: var(--space-12)`, `tabular-nums`) |
 | `.empty`, `.notfound` | 빈 상태, 찾을 수 없음 |
 | `.google-btn`, `.google-mark` | Google 로그인 버튼, 계정 표시 |
+
+### 7.11 Skeleton
+
+`<Skeleton className? />` — `components/ds.tsx`. `--bg-skeleton` 바탕에 시머 빛 띠가 좌→우로 지나가는 로딩 자리표시. 크기는 부모가 정한다(`position: absolute; inset: 0` 등). `aria-hidden="true"`.
+
+- 실제 콘텐츠와 **같은 크기**로 놓아 로딩이 끝나도 레이아웃이 움직이지 않게 한다.
+- 영역(이미지·카드)을 채우는 로딩에 쓴다. 버튼·상태 표시처럼 짧은 라벨이 있는 곳은 기존대로 `LoaderCircle .spin`.
+- 현재 사용처: 글 상세 커버(`.page-cover`).
 
 ---
 
@@ -566,7 +579,9 @@ import { UserAvatar } from '@/components/shell';
 - 셸 없음. `--bg-app` 중앙에 400px `.login-card` (`--shadow-panel`, 패딩 48/40/36).
 - 위→아래: 48px 로고 마크 "N" → "미니 노션" (`--type-title-lg`) → "나에게 맞춘 개인 업무 기록 공간" (`--type-body`, secondary) → [오류 `.alert`] → `.google-btn` "Google로 로그인" → 하단 안내 (`--type-meta`, tertiary).
 - 1b: `?error=cancelled|failed`일 때 버튼 위에 `.alert`. 버튼 간격이 36px → 12px로 줄어든다.
-- 로그인 상태면 `/`로 `replace`.
+- 버튼을 누르면 Google로 이동하는 동안 disabled. 이동을 시작하지 못하면 `failed` 문구를 같은 `.alert`로 보여 준다.
+- 로그인 상태면 `/`로 `replace`. 세션이 localStorage에 있어 서버 리다이렉트는 없고, 비로그인 차단도 `AppShell`이 클라이언트에서 한다.
+- OAuth 콜백 `/auth/callback`(`app/auth/callback/page.tsx`): `.login-screen` 중앙에 `.auth-pending`(`LoaderCircle` 15 spin + "로그인 중…", `--type-label`, secondary, `role="status"`) → 성공 시 `/`, 취소 `?error=cancelled`, 실패 `?error=failed`로 `/login` `replace`.
 
 ### 8.2 Workspace — 1c / 1d / 1h (`app/(app)/page.tsx`)
 
@@ -578,6 +593,7 @@ import { UserAvatar } from '@/components/shell';
 ### 8.3 Page detail — 1e / 1f / 1i (`app/(app)/pages/[id]/page.tsx`)
 
 - 헤더(`.is-compact`): 뒤로(`ChevronLeft`) · breadcrumb `업무 / {제목}` (d-only) · spacer · `SaveState` · `.divider-v` · 삭제 `IconButton`.
+- `.sheet-scroll` 맨 위 전체폭 커버(`.page-cover`, `--cover-h` 200px): 열 때마다 `https://cataas.com/cat/cute?t={시각}`로 새 랜덤 고양이를 요청하고 글에 저장하지 않는다. 받는 동안 `Skeleton`, 실패하거나 10초 안에 못 받으면 사진 없이 `--bg-accent-soft` 단색(문구·재시도 없음). 커버 아래 에디터 상단 패딩은 `--space-32`.
 - 에디터 최대폭 720px, 테두리 없는 입력: 제목 `input`(28px, placeholder "제목 없음") → `.meta` "{일시} 수정 · {날짜} 생성" → 1px 구분선 → 본문 `textarea`(15px/1.75, `field-sizing: content`, placeholder "내용을 입력하세요").
 - 본문 `textarea` 바로 아래 `.meta .editor-count` 글자 수 `공백 포함 N자 · 공백 제외 M자`. 입력마다 즉시 갱신(자동 저장과 무관), 제목은 세지 않음, `aria-describedby`로 본문에 연결.
 - 새 글(제목·내용 모두 빈 값)이면 제목에 `autoFocus`. 제목에서 Enter → 본문으로 포커스.
@@ -592,7 +608,7 @@ import { UserAvatar } from '@/components/shell';
 
 | 섹션 | 구성 |
 | --- | --- |
-| 프로필 이미지 | `UserAvatar` 80 + secondary "이미지 변경"(`Upload`) + ghost "기본 이미지로"(`RotateCcw`, 기본값이면 disabled) + 오류 `.alert` |
+| 프로필 이미지 | `UserAvatar` 80만 표시 (Google 프로필 사진, 없으면 이니셜). 변경 기능 없음 — `profile`에 이미지 컬럼이 없다 |
 | 별명 | `.mp-field`(글자 수 `n/20` `.meta`) + primary lg "저장" + 힌트/오류 |
 | 계정 | `.google-mark-lg` + 이메일 + "Google 계정으로 로그인됨" + secondary "로그아웃"(`LogOut`) |
 
@@ -606,7 +622,7 @@ import { UserAvatar } from '@/components/shell';
 | --- | --- |
 | 빈 상태 (화면) | `.empty`: 일러스트(`--bg-accent-soft` + 40px 아이콘) → `--type-title-lg` 제목(권유형) → `--type-body` secondary 설명(방법 안내) |
 | 빈 상태 (목록·드롭다운) | 한 줄 `--type-meta`/`--type-caption` + `--text-tertiary` |
-| 로딩 | `LoaderCircle size={15} className="spin"` + 짧은 라벨. 초기 데이터 준비 전에는 빈 셸(`<div className="app" />`)이나 `null`을 렌더 |
+| 로딩 | 영역을 채우는 콘텐츠(이미지 등)는 같은 크기의 `Skeleton`(§7.11). 그 외에는 `LoaderCircle size={15} className="spin"` + 짧은 라벨. 초기 데이터 준비 전에는 빈 셸(`<div className="app" />`)이나 `null`을 렌더 |
 | 저장 상태 | `저장 중…`(spin) → `저장됨`(`Check`) / `저장 실패`(`CircleAlert`, 빨강 600) + sm secondary "다시 시도" |
 | 삭제 확인 | `DeleteDialog` (§7.9) |
 | 오류 (폼·화면) | `.alert` + `role="alert"` |
@@ -631,8 +647,8 @@ import { UserAvatar } from '@/components/shell';
 
 | 종류 | 규칙 | 실제 예 |
 | --- | --- | --- |
-| 버튼 | 2~6자, 동사 명사형 또는 "~로" 목적지형 | 저장 · 삭제 · 취소 · 다시 시도 · 로그아웃 · 이미지 변경 · 기본 이미지로 · 업무 페이지로 · Google로 로그인 |
-| 상태 | 명사형, 마침표 없음 | 저장 중… · 저장됨 · 저장 실패 · Google 계정으로 로그인됨 |
+| 버튼 | 2~6자, 동사 명사형 또는 "~로" 목적지형 | 저장 · 삭제 · 취소 · 다시 시도 · 로그아웃 · 업무 페이지로 · Google로 로그인 |
+| 상태 | 명사형, 마침표 없음 | 저장 중… · 저장됨 · 저장 실패 · 로그인 중… · Google 계정으로 로그인됨 |
 | 확인 질문 | "~할까요?" | 이 글을 삭제할까요? |
 | 빈 상태 제목 | 권유형 "~해 보세요" | 첫 글을 만들어 보세요 |
 | placeholder | 행동 안내 또는 기본값 | /page를 입력하고 Enter를 눌러 새 글 만들기 · 제목 없음 · 내용을 입력하세요 · 글 제목 검색 |
@@ -648,11 +664,9 @@ import { UserAvatar } from '@/components/shell';
 | 알 수 없는 명령어 | 알 수 없는 명령어예요. /page를 입력해 새 글을 만들어 보세요. |
 | 로그인 취소 | 로그인이 취소되었어요. 다시 시도해 주세요. |
 | 로그인 실패 | 로그인에 실패했어요. 잠시 후 다시 시도해 주세요. |
-| 이미지 형식 | JPG, PNG, WEBP 형식의 이미지만 올릴 수 있어요. |
-| 이미지 용량 | 5MB 이하의 이미지만 올릴 수 있어요. 선택한 파일은 {n.n}MB예요. |
-| 이미지 저장 실패 | 이미지를 저장하지 못했어요. 다시 시도해 주세요. |
 | 별명 빈 값 | 별명을 입력해 주세요. 공백만으로는 저장할 수 없어요. |
 | 별명 저장 성공 | 별명을 저장했어요. |
+| 별명 저장 실패 | 별명을 저장하지 못했어요. 다시 시도해 주세요. |
 | 글 없음 | 글을 찾을 수 없어요 / 삭제되었거나 접근할 수 없는 글이에요. |
 | 삭제 확인 설명 | ‘{title}’ 글이 삭제됩니다. 삭제한 글은 복구할 수 없습니다. ← 유일한 합니다체 (불일치 참고) |
 
@@ -685,6 +699,8 @@ import { UserAvatar } from '@/components/shell';
 | 입력 이름 | 모든 입력에 `aria-label` (명령어 입력, 글 제목 검색, 제목, 내용, 별명) |
 | 상태 알림 | `SaveState` `role="status"` / 실패 `role="alert"`, `.alert` `role="alert"` |
 | 보조 설명 | 내용 `textarea`의 `aria-describedby` → 글자 수 (라이브 영역 아님, 입력마다 낭독하지 않음) |
+| 장식 이미지 | 글 커버는 `aria-hidden="true"` + `alt=""`, 포커스를 받지 않음 |
+| 동작 줄이기 | `prefers-reduced-motion: reduce`에서 스켈레톤 시머 정지 |
 | 다이얼로그 | `role="alertdialog"`, `aria-modal`, `aria-labelledby`, Esc 닫기, 확정 버튼 `autoFocus` |
 | 검색 결과 | `role="listbox"`/`option` + `aria-selected`, ↑↓/Enter/Esc |
 | 한글 조합 | Enter 처리 시 `e.nativeEvent.isComposing` 확인 (IME 조합 중 제출 방지) |
@@ -749,17 +765,17 @@ import { UserAvatar } from '@/components/shell';
 
 | 분류 | 자주 쓰는 토큰 |
 | --- | --- |
-| 배경 | `--bg-app` · `--bg-sidebar` · `--bg-surface` · `--bg-hover` · `--bg-selected` · `--bg-inverse` · `--bg-accent-soft` |
+| 배경 | `--bg-app` · `--bg-sidebar` · `--bg-surface` · `--bg-hover` · `--bg-selected` · `--bg-inverse` · `--bg-accent-soft` · `--bg-skeleton` · `--bg-skeleton-shine` |
 | 텍스트 | `--text-primary` · `--text-secondary` · `--text-tertiary` · `--text-placeholder` · `--text-inverse` · `--text-danger` · `--text-accent` |
 | 보더 | `--border-subtle` · `--border-default` · `--border-strong` |
 | 타이포 | `--type-title-lg` · `--type-title` · `--type-heading` · `--type-body` · `--type-label` · `--type-caption` · `--type-meta` |
 | 간격 | `--space-{0,2,4,6,8,10,12,14,16,20,24,32,40,48}` |
 | radius | `--radius-4` · `--radius-6` · `--radius-8` · `--radius-12` · `--radius-pill` |
-| 치수 | `--topbar-h` 56 · `--sidebar-w` 232 · `--header-h` 52 · `--row-h` 32 · `--control-sm/md/lg` 28/36/40 |
+| 치수 | `--topbar-h` 56 · `--sidebar-w` 232 · `--header-h` 52 · `--row-h` 32 · `--control-sm/md/lg` 28/36/40 · `--cover-h` 200 · `--cover-h-sm` 140 |
 | 그림자 | `--shadow-panel` · `--shadow-xs` · `--shadow-md` · `--shadow-lg` |
-| 모션 | `--dur-fast` 100 · `--dur-base` 160 · `--ease-standard` |
+| 모션 | `--dur-fast` 100 · `--dur-base` 160 · `--dur-shimmer` 1400 · `--ease-standard` |
 
-**정의만 있고 쓰지 않는 토큰 (Teamchat 잔재)**: `--gray-700`, `--mint-*`, `--purple-100/300`, `--green-500`, `--pink-300`, `--bg-pressed`, `--bg-rail-selected`, `--bg-notice`, `--bg-tooltip`, `--bg-badge`, `--text-inverse-muted`, `--accent`, `--status-online`, `--status-alert`, `--font-mono`, `--fs-*`, `--fw-*`, `--lh-*`, `--ls-tight`, `--type-micro`, `--space-*`(`--space-12` 제외), `--radius-10/16/20`, `--rail-w`, `--detail-w`, `--notice-h`, `--shadow-none`, `--shadow-sm`, `--dur-slow`, `--ease-out`. 삭제하지 말고, 새 UI가 해당 역할을 필요로 할 때 이 토큰부터 쓴다.
+**정의만 있고 쓰지 않는 토큰 (Teamchat 잔재)**: `--gray-700`, `--mint-*`, `--purple-100/300`, `--green-500`, `--pink-300`, `--bg-pressed`, `--bg-rail-selected`, `--bg-notice`, `--bg-tooltip`, `--bg-badge`, `--text-inverse-muted`, `--accent`, `--status-online`, `--status-alert`, `--font-mono`, `--fs-*`, `--fw-*`, `--lh-*`, `--ls-tight`, `--type-micro`, `--space-*`(`--space-12`·`24`·`32` 제외), `--radius-10/16/20`, `--rail-w`, `--detail-w`, `--notice-h`, `--shadow-none`, `--shadow-sm`, `--dur-slow`, `--ease-out`. 삭제하지 말고, 새 UI가 해당 역할을 필요로 할 때 이 토큰부터 쓴다.
 
 ## 부록 B. 파일 맵
 
@@ -769,17 +785,20 @@ import { UserAvatar } from '@/components/shell';
 | `app/globals.css` | 리셋, DS 클래스, 화면별 스타일, 모바일 미디어 쿼리 |
 | `app/layout.tsx` | Pretendard 로딩, `lang="ko"`, 메타데이터(title "미니 노션") |
 | `app/fonts/PretendardVariable.woff2` | 폰트 파일 |
-| `components/ds.tsx` | `Avatar`, `Button`, `IconButton`, `Kbd`, `SearchPill`, `SidebarItem`, `SidebarSection` |
+| `components/ds.tsx` | `Avatar`, `Button`, `IconButton`, `Kbd`, `SearchPill`, `SidebarItem`, `SidebarSection`, `Skeleton` |
 | `components/shell.tsx` | `AppShell`, `SearchBox`, `DeleteDialog`, `UserAvatar` |
 | `app/(app)/layout.tsx` | 인증 화면을 `AppShell`로 감쌈 |
 | `app/(app)/page.tsx` | 업무 페이지 + `CommandInput` (1c/1d/1h) |
-| `app/(app)/pages/[id]/page.tsx` | 글 상세 + `SaveState` + `CharCount` + `NotFound` (1e/1f/1i) |
+| `app/(app)/pages/[id]/page.tsx` | 글 상세 + `Cover` + `SaveState` + `CharCount` + `NotFound` (1e/1f/1i) |
 | `app/(app)/mypage/page.tsx` | 마이 페이지 (1g) |
 | `app/login/page.tsx` | 로그인 (1a/1b) |
 | `lib/commands.ts` | 슬래시 명령어 레지스트리 (`COMMANDS`, `matchCommands`) — 새 명령어는 여기에 항목 추가 |
 | `lib/format.ts` | 날짜·제목·글자 수 표기 |
 | `lib/text.ts` | 글자 수 계산 (`countCharacters`, grapheme 단위) |
-| `lib/store.ts` | localStorage 기반 데이터 레이어 |
+| `lib/store.ts` | 글 데이터 레이어 (localStorage) |
+| `lib/auth.ts` | 로그인 사용자 (`useAuth`, `authActions`) — Supabase Auth(Google) + `profile` 테이블(`name`) |
+| `lib/supabase/client.ts` | 브라우저 전용 Supabase 클라이언트 — 세션을 localStorage에 저장 (PKCE) |
+| `app/auth/callback/page.tsx` | OAuth 콜백: 브라우저에서 code 교환 (`?error=cancelled` · `failed`) |
 
 ---
 

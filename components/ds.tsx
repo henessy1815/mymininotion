@@ -49,6 +49,11 @@ export function Avatar({
   );
 }
 
+/** Loading placeholder with a shimmer sweep. The parent sets its size. */
+export function Skeleton({ className = '' }: { className?: string }) {
+  return <span className={['skeleton', className].filter(Boolean).join(' ')} aria-hidden="true" />;
+}
+
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';

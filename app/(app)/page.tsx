@@ -6,13 +6,15 @@ import { useState } from 'react';
 import { File, FileText, Search, SquarePen, Trash2 } from 'lucide-react';
 import { IconButton, Kbd } from '@/components/ds';
 import { DeleteDialog, SearchBox, UserAvatar } from '@/components/shell';
+import { useAuth } from '@/lib/auth';
 import { matchCommands } from '@/lib/commands';
 import { actions, useStore, type Page } from '@/lib/store';
 import { displayTitle, formatDateTime } from '@/lib/format';
 
 /** 1c 업무 페이지 · 1d 글 없음 · 1h 모바일 */
 export default function WorkspacePage() {
-  const { user, pages } = useStore();
+  const { user } = useAuth();
+  const { pages } = useStore();
   const [searching, setSearching] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Page | null>(null);
 

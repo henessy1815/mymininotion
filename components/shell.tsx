@@ -5,7 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { CircleUserRound, FileText, LayoutList, Search } from 'lucide-react';
 import { Avatar, Button, Kbd, SearchPill, SidebarItem, SidebarSection } from './ds';
-import { useStore, type User } from '@/lib/store';
+import { useAuth, type User } from '@/lib/auth';
+import { useStore } from '@/lib/store';
 import { displayTitle, formatDateTime } from '@/lib/format';
 
 export function UserAvatar({ user, size }: { user: User; size: number }) {
@@ -14,7 +15,8 @@ export function UserAvatar({ user, size }: { user: User; size: number }) {
 
 /** Redirects to /login when signed out (PRD #2), then renders the shell. */
 export function AppShell({ children }: { children: ReactNode }) {
-  const { ready, user, pages } = useStore();
+  const { ready, user } = useAuth();
+  const { pages } = useStore();
   const router = useRouter();
   const pathname = usePathname();
 
