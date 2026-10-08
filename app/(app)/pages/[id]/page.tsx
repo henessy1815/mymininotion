@@ -11,7 +11,7 @@ import { displayTitle, formatCharCount, formatDate, formatDateTime } from '@/lib
 import { countCharacters } from '@/lib/text';
 
 const AUTOSAVE_DELAY = 1000;
-const COVER_URL = 'https://cataas.com/cat/cute';
+const COVER_URL = process.env.NEXT_PUBLIC_COVER_IMAGE_URL || 'https://cataas.com/cat/cute';
 const COVER_TIMEOUT = 10_000;
 
 type SaveStatus = 'saving' | 'saved' | 'failed';

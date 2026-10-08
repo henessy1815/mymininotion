@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +40,30 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# secrets & keys
+*.key
+*.p12
+*.pfx
+*.crt
+id_rsa*
+credentials.json
+service-account*.json
+
+# Claude Code / MCP (개인 설정, Supabase 프로젝트 ID 포함)
+.claude/settings.local.json
+.claude/worktrees/
+.mcp.json
+
+# supabase CLI 로컬 상태
+supabase/.temp/
+supabase/.branches/
+
+# editors & OS
+.idea/
+*.swp
+Thumbs.db
+
+# logs
+*.log
+logs/
