@@ -178,6 +178,9 @@ a.plain:hover { color: inherit; }
   background: var(--red-100); font: var(--type-caption); color: var(--text-primary);
 }
 .alert-icon { color: var(--red-500); display: flex; padding-top: 1px; flex: none; }
+.alert-text { flex: 1; }
+.list-alert { margin-top: var(--space-16); align-items: center; }
+.dialog-alert { margin-top: var(--space-16); }
 
 /* ───────── Workspace (1c / 1d) ───────── */
 .workspace { padding: 28px 24px 24px; display: flex; justify-content: center; min-height: 100%; }

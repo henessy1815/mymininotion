@@ -301,7 +301,7 @@
 | 터치 타깃 | 헤더의 `IconButton`·링크는 `size={44}` (데스크톱 32) |
 | 검색 | 헤더 검색 아이콘 → 헤더 아래 `.m-search` 줄에 `SearchBox expanded` 전체폭 (그림자 대신 1px 보더) |
 | 목록 행 | 아이콘·삭제 버튼 숨김, 제목과 날짜를 세로로 쌓음, 제목 15px, 최소 높이 60px, hover 배경 없음 |
-| 에디터 | 패딩 `24px 20px 64px`, 제목 22px, "생성" 날짜 숨김. 커버 높이 `--cover-h-sm`, 커버 아래 상단 패딩 `--space-24` |
+| 에디터 | 패딩 `24px 20px 64px`, 제목 22px. 커버 높이 `--cover-h-sm`, 커버 아래 상단 패딩 `--space-24` |
 | 삭제 | 목록에서는 삭제 불가, 글 상세 헤더의 삭제 버튼으로만 |
 
 ---
@@ -516,14 +516,14 @@ import { UserAvatar } from '@/components/shell';
 | --- | --- |
 | 접힘 | `SearchPill label="글 제목 검색"` |
 | 펼침 | 240px pill 입력 + `autoFocus`, 결과는 오른쪽 정렬 320px 드롭다운(`--shadow-md`) |
-| 결과 | 최대 8개, `FileText` + 제목 + `.meta` 수정 일시, 40px 행 |
+| 결과 | 최대 8개, `FileText` + 제목 + `.meta` 작성 일시, 40px 행 |
 | 빈 결과 | `‘{검색어}’와 일치하는 글이 없어요` |
 | 키보드 | ↑/↓ 이동, Enter 이동, Esc 닫기, 바깥 클릭 닫기(데스크톱) |
 | 접근성 | `role="listbox"` / `role="option"` + `aria-selected` |
 
 ### 7.9 DeleteDialog
 
-용도: 글 삭제 확인 (PRD #8). props: `title`, `onCancel`, `onConfirm`.
+용도: 글 삭제 확인 (PRD #8). props: `title`, `onCancel`, `onConfirm`, `pending?`(요청 중 "삭제" disabled), `error?`(실패 문구 — 다이얼로그를 닫지 않고 설명 아래 `.alert`로 표시).
 
 | 요소 | 규칙 |
 | --- | --- |
@@ -531,6 +531,7 @@ import { UserAvatar } from '@/components/shell';
 | 제목 | 질문형 — "이 글을 삭제할까요?" (`--type-title`) |
 | 설명 | 대상 + 결과 — "‘{title}’ 글이 삭제됩니다. 삭제한 글은 복구할 수 없습니다." (`--type-body`, `--text-secondary`) |
 | 버튼 | 오른쪽 정렬, `secondary` "취소" → `danger` "삭제" (최소 폭 72px) |
+| 실패 | `error`가 있으면 설명 아래 `.alert.dialog-alert`(`margin-top: var(--space-16)`, `role="alert"`). 문구: "글을 삭제하지 못했어요. 다시 시도해 주세요." "삭제"를 다시 눌러 재시도 |
 | 닫기 | Esc, 배경 클릭 → `onCancel` |
 | 접근성 | `role="alertdialog"`, `aria-modal`, `aria-labelledby`, 확정 버튼에 `autoFocus` |
 
@@ -538,8 +539,10 @@ import { UserAvatar } from '@/components/shell';
 {pendingDelete && (
   <DeleteDialog
     title={displayTitle(pendingDelete.title)}
-    onCancel={() => setPendingDelete(null)}
-    onConfirm={() => { actions.deletePage(pendingDelete.id); setPendingDelete(null); }}
+    pending={deleting}
+    error={deleteFailed ? '글을 삭제하지 못했어요. 다시 시도해 주세요.' : undefined}
+    onCancel={closeDelete}
+    onConfirm={async () => { /* await actions.deletePage → 성공 시 닫기, 실패 시 deleteFailed */ }}
   />
 )}
 ```
@@ -552,7 +555,7 @@ import { UserAvatar } from '@/components/shell';
 | --- | --- |
 | `.command-box` / `.command-menu` / `.command-item` | `/page` 명령 입력창과 명령 제안 드롭다운 |
 | `.page-row` / `.page-link` / `.page-row-delete` | 업무 목록 행 (hover 시 삭제 버튼 노출) |
-| `.alert` | 연빨강 배경 오류 박스 (로그인·이미지 업로드) |
+| `.alert` | 연빨강 배경 오류 박스 (로그인·글 목록 불러오기·삭제 실패). 문구는 `.alert-text`(flex 1), 오른쪽에 sm secondary 버튼을 둘 수 있다. 위치 변형: `.list-alert`(업무 목록 자리, 가운데 정렬), `.dialog-alert`(다이얼로그 안) |
 | `.mp-field` + `.mp-field-hint` | 테두리 입력 필드 + 글자 수 `.meta` + 힌트/오류 |
 | `.save-state` | 저장 중/저장됨/저장 실패 인디케이터 |
 | `.page-cover` | 글 상세 상단 커버. `data-state="loading\|loaded\|failed"`에 따라 `Skeleton` → 사진(`object-fit: cover`) → `--bg-accent-soft` 단색. 높이 고정이라 상태가 바뀌어도 레이아웃 이동 없음 |
@@ -585,20 +588,22 @@ import { UserAvatar } from '@/components/shell';
 
 ### 8.2 Workspace — 1c / 1d / 1h (`app/(app)/page.tsx`)
 
-- 헤더: "업무"(`.sheet-title`) + 글 수(`.sheet-count`, d-only) · spacer · "최근 수정순"(`.meta`, d-only). 모바일은 로고 마크 + 검색 `IconButton` + 아바타 링크.
+- 헤더: "업무"(`.sheet-title`) + 글 수(`.sheet-count`, d-only) · spacer · "최근 작성순"(`.meta`, d-only). 모바일은 로고 마크 + 검색 `IconButton` + 아바타 링크.
 - 본문 최대폭 760px: `CommandInput`(`.command-box`, `SquarePen` + 입력 + `Kbd Enter`) → 글 목록.
-- 목록 행: 아이콘(`FileText`/제목 없으면 `File` + placeholder 색) + 제목(600 14px, 없으면 "제목 없음" 500 + tertiary) + `.meta` 수정 일시 + hover 시 `Trash2`.
+- 목록 행: 아이콘(`FileText`/제목 없으면 `File` + placeholder 색) + 제목(600 14px, 없으면 "제목 없음" 500 + tertiary) + `.meta` 작성 일시 + hover 시 `Trash2`. 정렬은 작성 시각 내림차순 (`page` 테이블에 수정 시각 컬럼이 없다).
+- 목록은 Supabase에서 불러온다. 준비 전에는 목록 자리를 비워 두고(빈 상태가 깜빡이지 않게), 실패하면 `.alert.list-alert` "글 목록을 불러오지 못했어요. 다시 시도해 주세요." + sm secondary "다시 시도".
+- `/page` 실행 중에는 Enter를 다시 받지 않는다(중복 생성 방지). 만들지 못하면 `.command-error` "새 글을 만들지 못했어요. 다시 시도해 주세요.". 실행할 때 입력값을 비워 명령 메뉴를 닫는다(메뉴가 오류 문구를 덮지 않게).
 - 1d 빈 상태: 보라 일러스트 박스(128×104) → "첫 글을 만들어 보세요" → `Kbd`가 섞인 안내문.
 
 ### 8.3 Page detail — 1e / 1f / 1i (`app/(app)/pages/[id]/page.tsx`)
 
 - 헤더(`.is-compact`): 뒤로(`ChevronLeft`) · breadcrumb `업무 / {제목}` (d-only) · spacer · `SaveState` · `.divider-v` · 삭제 `IconButton`.
 - `.sheet-scroll` 맨 위 전체폭 커버(`.page-cover`, `--cover-h` 200px): 열 때마다 `https://cataas.com/cat/cute?t={시각}`로 새 랜덤 고양이를 요청하고 글에 저장하지 않는다. 받는 동안 `Skeleton`, 실패하거나 10초 안에 못 받으면 사진 없이 `--bg-accent-soft` 단색(문구·재시도 없음). 커버 아래 에디터 상단 패딩은 `--space-32`.
-- 에디터 최대폭 720px, 테두리 없는 입력: 제목 `input`(28px, placeholder "제목 없음") → `.meta` "{일시} 수정 · {날짜} 생성" → 1px 구분선 → 본문 `textarea`(15px/1.75, `field-sizing: content`, placeholder "내용을 입력하세요").
+- 에디터 최대폭 720px, 테두리 없는 입력: 제목 `input`(28px, placeholder "제목 없음") → `.meta` "{일시} 작성" → 1px 구분선 → 본문 `textarea`(15px/1.75, `field-sizing: content`, placeholder "내용을 입력하세요").
 - 본문 `textarea` 바로 아래 `.meta .editor-count` 글자 수 `공백 포함 N자 · 공백 제외 M자`. 입력마다 즉시 갱신(자동 저장과 무관), 제목은 세지 않음, `aria-describedby`로 본문에 연결.
 - 새 글(제목·내용 모두 빈 값)이면 제목에 `autoFocus`. 제목에서 Enter → 본문으로 포커스.
-- 자동 저장: 입력 멈춘 뒤 1000ms debounce, 페이지를 떠날 때 미저장분 flush.
-- 1f: `DeleteDialog` → 삭제 후 `/`로 `replace`.
+- 자동 저장: 입력 멈춘 뒤 1000ms debounce, 페이지를 떠날 때 미저장분 flush. 저장 요청은 순서대로 하나씩 보내고, 마지막 요청의 결과만 `SaveState`에 반영한다.
+- 1f: `DeleteDialog` → 삭제 성공 후 `/`로 `replace`. 실패하면 다이얼로그 안에 오류를 보여 주고 머문다.
 - 글이 없으면 `NotFound`: `FileX` 40 → "글을 찾을 수 없어요" → 설명 → secondary "업무 페이지로".
 
 ### 8.4 My page — 1g (`app/(app)/mypage/page.tsx`)
@@ -652,7 +657,7 @@ import { UserAvatar } from '@/components/shell';
 | 확인 질문 | "~할까요?" | 이 글을 삭제할까요? |
 | 빈 상태 제목 | 권유형 "~해 보세요" | 첫 글을 만들어 보세요 |
 | placeholder | 행동 안내 또는 기본값 | /page를 입력하고 Enter를 눌러 새 글 만들기 · 제목 없음 · 내용을 입력하세요 · 글 제목 검색 |
-| 메타 | 명사구 | 최근 수정순 · {일시} 수정 · {날짜} 생성 |
+| 메타 | 명사구 | 최근 작성순 · {일시} 작성 |
 | 화면명 | 사이드바 "업무 페이지" / 시트 제목 "업무" / "마이 페이지" | |
 
 ### 9.3 오류·확인 메시지 공식
@@ -668,14 +673,17 @@ import { UserAvatar } from '@/components/shell';
 | 별명 저장 성공 | 별명을 저장했어요. |
 | 별명 저장 실패 | 별명을 저장하지 못했어요. 다시 시도해 주세요. |
 | 글 없음 | 글을 찾을 수 없어요 / 삭제되었거나 접근할 수 없는 글이에요. |
+| 글 목록 불러오기 실패 | 글 목록을 불러오지 못했어요. 다시 시도해 주세요. |
+| 새 글 만들기 실패 | 새 글을 만들지 못했어요. 다시 시도해 주세요. |
+| 글 삭제 실패 | 글을 삭제하지 못했어요. 다시 시도해 주세요. |
 | 삭제 확인 설명 | ‘{title}’ 글이 삭제됩니다. 삭제한 글은 복구할 수 없습니다. ← 유일한 합니다체 (불일치 참고) |
 
 ### 9.4 날짜·숫자 표기 (`lib/format.ts`)
 
 | 함수 | 형식 | 예 | 사용처 |
 | --- | --- | --- | --- |
-| `formatDate(ts)` | `M/D(요일)` | `9/28(월)` | 에디터 "생성" 날짜 |
-| `formatDateTime(ts)` | `M/D(요일) 오전\|오후 h:mm` | `9/28(월) 오후 3:12` | 목록·검색 결과·에디터 "수정" 일시 |
+| `formatDate(ts)` | `M/D(요일)` | `9/28(월)` | `formatDateTime`의 날짜 부분 |
+| `formatDateTime(ts)` | `M/D(요일) 오전\|오후 h:mm` | `9/28(월) 오후 3:12` | 목록·검색 결과·에디터 "작성" 일시 |
 | `displayTitle(title)` | 공백 제거 후 빈 값이면 `제목 없음` | — | 제목을 표시하는 모든 곳 |
 | `formatCharCount(count)` | `공백 포함 {n}자 · 공백 제외 {m}자` (`ko-KR` 천 단위 `,`) | `공백 포함 1,234자 · 공백 제외 1,050자` | 에디터 본문 글자 수 (`countCharacters` 결과) |
 
@@ -795,9 +803,9 @@ import { UserAvatar } from '@/components/shell';
 | `lib/commands.ts` | 슬래시 명령어 레지스트리 (`COMMANDS`, `matchCommands`) — 새 명령어는 여기에 항목 추가 |
 | `lib/format.ts` | 날짜·제목·글자 수 표기 |
 | `lib/text.ts` | 글자 수 계산 (`countCharacters`, grapheme 단위) |
-| `lib/store.ts` | 글 데이터 레이어 (localStorage) |
+| `lib/store.ts` | 글 데이터 레이어 — Supabase `page` 테이블, 로그인 사용자의 글만 (RLS: `supabase/migrations/20261012000000_page_rls.sql`) |
 | `lib/auth.ts` | 로그인 사용자 (`useAuth`, `authActions`) — Supabase Auth(Google) + `profile` 테이블(`name`) |
-| `lib/supabase/client.ts` | 브라우저 전용 Supabase 클라이언트 — 세션을 localStorage에 저장 (PKCE) |
+| `lib/supabase/client.ts` | 브라우저 전용 Supabase 클라이언트 — 세션을 localStorage에 저장 (PKCE). 앱 전체가 `getClient()` 하나를 공유 |
 | `app/auth/callback/page.tsx` | OAuth 콜백: 브라우저에서 code 교환 (`?error=cancelled` · `failed`) |
 
 ---

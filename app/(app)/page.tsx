@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { File, FileText, Search, SquarePen, Trash2 } from 'lucide-react';
-import { IconButton, Kbd } from '@/components/ds';
+import { CircleAlert, File, FileText, Search, SquarePen, Trash2 } from 'lucide-react';
+import { Button, IconButton, Kbd } from '@/components/ds';
 import { DeleteDialog, SearchBox, UserAvatar } from '@/components/shell';
 import { useAuth } from '@/lib/auth';
 import { matchCommands } from '@/lib/commands';
@@ -14,9 +14,16 @@ import { displayTitle, formatDateTime } from '@/lib/format';
 /** 1c 업무 페이지 · 1d 글 없음 · 1h 모바일 */
 export default function WorkspacePage() {
   const { user } = useAuth();
-  const { pages } = useStore();
+  const { ready, failed, pages } = useStore();
   const [searching, setSearching] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Page | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteFailed, setDeleteFailed] = useState(false);
+
+  const closeDelete = () => {
+    setPendingDelete(null);
+    setDeleteFailed(false);
+  };
 
   return (
     <>
@@ -25,7 +32,7 @@ export default function WorkspacePage() {
         <span className="sheet-title">업무</span>
         <span className="sheet-count d-only">{pages.length}</span>
         <span className="spacer" />
-        {pages.length > 0 && <span className="meta d-only">최근 수정순</span>}
+        {pages.length > 0 && <span className="meta d-only">최근 작성순</span>}
         <IconButton className="m-only" icon={Search} label="검색" size={44} iconSize={20} onClick={() => setSearching((s) => !s)} />
         {user && (
           <Link href="/mypage" className="m-only plain" aria-label="마이 페이지" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
@@ -44,7 +51,17 @@ export default function WorkspacePage() {
           <div className="workspace-inner">
             <CommandInput />
 
-            {pages.length === 0 ? (
+            {!ready ? null : failed ? (
+              <div className="alert list-alert" role="alert">
+                <span className="alert-icon">
+                  <CircleAlert size={16} />
+                </span>
+                <span className="alert-text">글 목록을 불러오지 못했어요. 다시 시도해 주세요.</span>
+                <Button variant="secondary" size="sm" onClick={() => void actions.reload()}>
+                  다시 시도
+                </Button>
+              </div>
+            ) : pages.length === 0 ? (
               <div className="empty">
                 <div className="empty-illust">
                   <FileText size={40} strokeWidth={1.5} />
@@ -64,7 +81,7 @@ export default function WorkspacePage() {
                       </span>
                       <span className="page-link-body">
                         <span className={`page-link-title${p.title.trim() ? '' : ' is-untitled'}`}>{displayTitle(p.title)}</span>
-                        <span className="meta">{formatDateTime(p.updatedAt)}</span>
+                        <span className="meta">{formatDateTime(p.createdAt)}</span>
                       </span>
                     </Link>
                     <IconButton
@@ -86,10 +103,20 @@ export default function WorkspacePage() {
       {pendingDelete && (
         <DeleteDialog
           title={displayTitle(pendingDelete.title)}
-          onCancel={() => setPendingDelete(null)}
-          onConfirm={() => {
-            actions.deletePage(pendingDelete.id);
-            setPendingDelete(null);
+          pending={deleting}
+          error={deleteFailed ? '글을 삭제하지 못했어요. 다시 시도해 주세요.' : undefined}
+          onCancel={closeDelete}
+          onConfirm={async () => {
+            setDeleting(true);
+            setDeleteFailed(false);
+            try {
+              await actions.deletePage(pendingDelete.id);
+              closeDelete();
+            } catch {
+              setDeleteFailed(true);
+            } finally {
+              setDeleting(false);
+            }
           }}
         />
       )}
@@ -102,17 +129,28 @@ function CommandInput() {
   const router = useRouter();
   const [value, setValue] = useState('');
   const [error, setError] = useState('');
+  const [running, setRunning] = useState(false);
   const matches = matchCommands(value);
 
-  const run = (index = 0) => {
+  const run = async (index = 0) => {
+    // A second Enter while the first is still saving would create a duplicate page.
+    if (running) return;
     const exact = matches.find((c) => c.name === value.trim().toLowerCase());
     const cmd = exact ?? matches[index];
     if (!cmd) {
       if (value.trim()) setError('알 수 없는 명령어예요. /page를 입력해 새 글을 만들어 보세요.');
       return;
     }
+    // Clearing closes the command menu, which would otherwise cover the error below the input.
     setValue('');
-    cmd.run({ navigate: (href) => router.push(href) });
+    setRunning(true);
+    try {
+      await cmd.run({ navigate: (href) => router.push(href) });
+    } catch {
+      setError(cmd.failMessage);
+    } finally {
+      setRunning(false);
+    }
   };
 
   return (
@@ -128,7 +166,7 @@ function CommandInput() {
             setError('');
           }}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.nativeEvent.isComposing) run();
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) void run();
             if (e.key === 'Escape') setValue('');
           }}
         />
@@ -138,7 +176,7 @@ function CommandInput() {
         <div className="command-menu" role="listbox">
           <div className="command-menu-title">명령어</div>
           {matches.map((c, i) => (
-            <button key={c.name} type="button" className={`command-item${i === 0 ? ' is-active' : ''}`} onClick={() => run(i)}>
+            <button key={c.name} type="button" className={`command-item${i === 0 ? ' is-active' : ''}`} onClick={() => void run(i)}>
               <span className="command-item-icon">
                 <c.icon size={16} />
               </span>

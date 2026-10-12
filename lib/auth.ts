@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/client';
+import { getClient } from '@/lib/supabase/client';
 
 /**
  * Signed-in user, backed by Supabase Auth (Google) and the `profile` table.
@@ -23,13 +23,10 @@ type AuthSnapshot = { ready: boolean; user: User | null };
 const SERVER_SNAPSHOT: AuthSnapshot = { ready: false, user: null };
 
 let snapshot: AuthSnapshot = SERVER_SNAPSHOT;
-let supabase: ReturnType<typeof createClient> | null = null;
 let userId: string | null = null;
 const listeners = new Set<() => void>();
 
-function client() {
-  return (supabase ??= createClient());
-}
+const client = getClient;
 
 function emit(next: AuthSnapshot) {
   snapshot = next;
