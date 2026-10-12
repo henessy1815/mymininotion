@@ -133,6 +133,21 @@ a.plain:hover { color: inherit; }
 .sidebar {
   width: var(--sidebar-w); flex: none; background: var(--bg-sidebar); border-radius: var(--radius-12);
   padding: 12px 8px; display: flex; flex-direction: column; gap: 14px; overflow: hidden;
+  transition: width var(--dur-slow) var(--ease-standard);
+}
+.sidebar-head { display: flex; justify-content: flex-end; }
+/* Collapsed: icon-only rail — nav icons stay, section and hint hide */
+.sidebar.is-collapsed { width: var(--rail-w); }
+.sidebar.is-collapsed .sidebar-head { justify-content: center; }
+.sidebar.is-collapsed .sb-item { justify-content: center; padding: var(--space-0); }
+.sidebar.is-collapsed .sb-item-label,
+.sidebar.is-collapsed .sb-section,
+.sidebar.is-collapsed .sidebar-hint,
+.sidebar.is-collapsed .switch { display: none; }
+/* Collapsed switch: no room for the track, so "on" reads as a selected row */
+.sidebar.is-collapsed .sb-switch[aria-checked="true"] { background: var(--bg-selected); }
+@media (prefers-reduced-motion: reduce) {
+  .sidebar { transition: none; }
 }
 .sidebar-nav { display: flex; flex-direction: column; gap: 2px; }
 .sidebar-empty { padding: 4px 10px; font: var(--type-meta); color: var(--text-tertiary); }

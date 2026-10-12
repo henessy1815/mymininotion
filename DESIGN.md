@@ -29,7 +29,7 @@
 | `fonts.css`로 폰트 로드 | `next/font/local`로 대체 (`app/layout.tsx`) |
 | hover 상태를 JS state로 처리 | CSS `:hover`로 이동 (`globals.css`) |
 | `lucide-static`을 CDN에서 로드 | `lucide-react` 패키지 사용 |
-| rail(`--rail-w`), 상세 패널(`--detail-w`), 공지 배너(`--notice-h`, `--bg-notice`) | 해당 UI 없음 → 토큰만 남아 있고 **미사용** |
+| rail(`--rail-w`), 상세 패널(`--detail-w`), 공지 배너(`--notice-h`, `--bg-notice`) | `--rail-w`는 접힌 사이드바 폭으로 사용. 상세 패널·공지 배너는 해당 UI 없음 → 토큰만 남아 있고 **미사용** |
 | 봇 아바타·AI 라이터(`--purple-500`, `--pink-300`), 온라인 상태(`--green-500`) | 봇·AI·협업 기능 없음 → 보라는 사용자 아바타·빈 상태에만, 초록·분홍·민트는 **미사용** |
 
 ---
@@ -57,7 +57,7 @@
 | pill / radius-8 | ✅ 확인 + 보완 | 시트·카드·다이얼로그·명령 입력창은 `--radius-12` |
 | 얕은 깊이감 | ✅ 확인 + 보완 | 고정 요소는 `--shadow-xs`/`--shadow-panel`. 드롭다운은 `--shadow-md`, 다이얼로그는 `--shadow-lg`. `--shadow-sm`은 미사용 |
 | 본문 14/1.6, 행 32, 컨트롤 28/36/40 | ✅ 확인 + 보완 | 에디터 본문은 15px/1.75로 더 여유. 목록 행은 52px, 모바일 터치 타깃 44px |
-| 100–240ms, `--ease-standard` | ✏️ 부분 수정 | 실사용은 100ms(`--dur-fast`)·160ms(`--dur-base`)뿐. `--dur-slow`(240ms) 미사용. easing은 `.btn`에만 명시 |
+| 100–240ms, `--ease-standard` | ✏️ 부분 수정 | 100ms(`--dur-fast`)·160ms(`--dur-base`)·240ms(`--dur-slow`, 사이드바 접기/펼치기). easing은 `.btn`·`.sidebar`에만 명시 |
 | 한국어 우선 타이포 | ✅ 확인 | `lang="ko"`, Pretendard Variable, `body { word-break: keep-all }` |
 | 담백한 존댓말 | ✅ 확인 (예외 1곳) | 해요체 중심. 삭제 다이얼로그 설명만 합니다체 |
 
@@ -296,12 +296,13 @@
 | 토큰 | 값 | 사용 |
 | --- | --- | --- |
 | `--topbar-h` | 56px | `.topbar` |
-| `--sidebar-w` | 232px | `.sidebar` |
+| `--sidebar-w` | 232px | `.sidebar` (펼침) |
+| `--rail-w` | 56px | `.sidebar.is-collapsed` (접힘, 아이콘만 남은 rail) |
 | `--header-h` | 52px | `.sheet-header` |
 | `--row-h` | 32px | `.sb-item` |
 | `--control-sm` / `md` / `lg` | 28 / 36 / 40px | `Button` size `sm` / `md` / `lg` |
 | `--cover-h` / `--cover-h-sm` | 200 / 140px | 글 상세 커버 높이 (데스크톱 / 767px 이하) |
-| `--rail-w` 56px, `--detail-w` 296px, `--notice-h` 40px | — | 미사용 (Teamchat 잔재) |
+| `--detail-w` 296px, `--notice-h` 40px | — | 미사용 (Teamchat 잔재) |
 
 **토큰 밖의 고정 치수** `(관찰된 패턴)`: pill·검색 입력 높이 32px, 목록 행 52px, 명령 입력창 48px, 명령 항목 44px, 검색 결과 행 40px, 마이 페이지 입력 40px(= `--control-lg`), Google 버튼 44px, 콘텐츠 최대폭 760px(업무) / 720px(에디터) / 600px(마이) / 400px(로그인 카드) / 380px(다이얼로그) / 320px(드롭다운).
 
@@ -315,6 +316,7 @@
 │   [.brand-pill  N 미니 노션]  ······spacer······  [SearchBox]  [.user-pill ◯ 별명]
 └─ .app-body (flex, gap 8, padding 0 8 8)
     ├─ nav.sidebar (--sidebar-w 232, --bg-sidebar, --radius-12)
+    │   ├─ .sidebar-head  IconButton 사이드바 접기/펼치기 (오른쪽 정렬)
     │   ├─ .sidebar-nav   SidebarItem ×2 (업무 페이지 / 마이 페이지)
     │   ├─ SidebarSection "최근 글"  → SidebarItem ×최대 5 (제목 있는 글만)
     │   └─ .sidebar-foot  (margin-top: auto → 하단 고정, gap 2)
@@ -326,6 +328,7 @@
             └─ 화면별 콘텐츠 (가운데 정렬 + max-width)
 ```
 
+- **사이드바 접기/펼치기** (`AppShell`의 `useSidebarCollapsed`): `.sidebar-head`의 `IconButton`(`PanelLeftClose` "사이드바 접기" ↔ `PanelLeftOpen` "사이드바 펼치기", `aria-expanded`)을 누를 때마다 토글한다. 접히면 `.is-collapsed` → 폭 `--rail-w`(56px), 토글 버튼과 `.sidebar-nav` 아이콘만 가운데 정렬로 남고 `.sb-section`·`.sidebar-hint`·`.sb-item-label`은 숨긴다. 다크 모드 `SidebarSwitch`는 `Moon` 아이콘만 남고 스위치 트랙(`.switch`)을 숨기며, 켜짐 상태는 `--bg-selected` 배경으로 표시한다(섹션은 언마운트하지 않아 "최근 글" 펼침 상태 유지). 시트가 남은 폭을 채운다. 상태는 브라우저별 localStorage(`mini-notion:sidebar-collapsed`)에 기억하며 읽기·쓰기 실패 시 펼침이 기본. 모바일에서는 사이드바 자체가 숨겨지므로 해당 없음.
 - 로그인(`/login`)은 셸 밖이다. `.login-screen`이 카드 하나를 화면 중앙에 둔다.
 - 화면 헤더 구성: `[제목 or 뒤로가기+breadcrumb]` → `.spacer` → `[메타·상태]` → `.divider-v` → `[IconButton]`.
 
@@ -376,13 +379,13 @@
 | --- | --- | --- |
 | `--dur-fast` | 100ms | 배경색 전환 (`.btn`, `.icon-btn`) |
 | `--dur-base` | 160ms | 사이드바 섹션 chevron 회전, 스위치 thumb 이동 |
-| `--dur-slow` | 240ms | 미사용 — 패널 등장처럼 큰 이동에 예약 |
+| `--dur-slow` | 240ms | 사이드바 접기/펼치기 폭 전환 (`.sidebar` `width`). 패널처럼 큰 이동에 쓴다 |
 | `--ease-standard` | `cubic-bezier(.2,0,0,1)` | `.btn`, `.switch` transition |
 | `--ease-out` | `cubic-bezier(0,0,.2,1)` | 미사용 |
 | `.spin` | `spin 1s linear infinite` | 로딩 아이콘(`LoaderCircle`) |
 | `--dur-shimmer` | 1400ms | `.skeleton::after` 시머(`shimmer` 키프레임, `transform: translateX` -100% → 100%, `--ease-standard`, 무한 반복). `prefers-reduced-motion: reduce`에서는 빛 띠를 숨겨 정적 자리표시만 남긴다 |
 
-**규칙**: transition은 `background`·`transform`에만 건다. 새 transition은 `var(--dur-*) var(--ease-standard)`를 함께 쓴다. 등장/퇴장 애니메이션은 현재 없다 (드롭다운·다이얼로그는 즉시 표시).
+**규칙**: transition은 `background`·`transform`에만 건다. 예외: 사이드바 폭(`width`, `--dur-slow`) — `prefers-reduced-motion: reduce`에서는 transition 없음. 새 transition은 `var(--dur-*) var(--ease-standard)`를 함께 쓴다. 등장/퇴장 애니메이션은 현재 없다 (드롭다운·다이얼로그는 즉시 표시).
 
 ### 5.3 상호작용 상태 표현
 
@@ -422,7 +425,7 @@
 | 모바일 뒤로가기 | 22 |
 | 빈 상태·NotFound 일러스트 | 40 (`strokeWidth={1.5}`) |
 
-**사용 중인 아이콘과 의미**: `LayoutList`(업무 페이지) · `CircleUserRound`(마이 페이지) · `FileText`(제목 있는 글) · `File`(제목 없는 글) · `FilePlus`(`/page` 명령) · `SquarePen`(명령 입력창) · `Search` · `Trash2`(삭제) · `ChevronLeft`(뒤로) · `ChevronDown`(섹션 접기) · `Check`(저장됨) · `LoaderCircle`(저장 중·로그인 중) · `CircleAlert`(오류) · `FileX`(글 없음) · `LogOut` · `Moon`(다크 모드)
+**사용 중인 아이콘과 의미**: `LayoutList`(업무 페이지) · `CircleUserRound`(마이 페이지) · `FileText`(제목 있는 글) · `File`(제목 없는 글) · `FilePlus`(`/page` 명령) · `SquarePen`(명령 입력창) · `Search` · `Trash2`(삭제) · `ChevronLeft`(뒤로) · `ChevronDown`(섹션 접기) · `PanelLeftClose`/`PanelLeftOpen`(사이드바 접기/펼치기) · `Check`(저장됨) · `LoaderCircle`(저장 중·로그인 중) · `CircleAlert`(오류) · `FileX`(글 없음) · `LogOut` · `Moon`(다크 모드)
 
 ---
 
@@ -518,7 +521,7 @@ import { LogOut } from 'lucide-react';
 | `label` | `string` (넘치면 말줄임) |
 | `selected` | `boolean` → `.is-selected` + `aria-current="page"` |
 
-상태: 높이 `--row-h`(32), hover `--bg-hover`, selected `--bg-selected` + 600.
+상태: 높이 `--row-h`(32), hover `--bg-hover`, selected `--bg-selected` + 600. `title`·`aria-label`에 `label`이 들어가 접힌 사이드바(라벨 숨김)에서도 툴팁과 접근 가능한 이름이 남는다.
 
 ```tsx
 <SidebarItem href="/" icon={LayoutList} label="업무 페이지" selected={pathname === '/'} />
@@ -629,7 +632,7 @@ import { UserAvatar } from '@/components/shell';
 | `checked` | `boolean` → `aria-checked` |
 | `onChange` | `(checked: boolean) => void` |
 
-스위치(`.switch`): 트랙 `--control-sm`(28)×`--space-16`, `--radius-pill`, off `--bg-switch-track` / on `--bg-inverse`. thumb `--space-12` 원, `--bg-surface` + `--shadow-xs`, on에서 `--space-12`만큼 이동(`--dur-base` `--ease-standard`). 스위치는 `aria-hidden`, 상태는 버튼의 `role="switch"` + `aria-checked`로 전달.
+스위치(`.switch`): 트랙 `--control-sm`(28)×`--space-16`, `--radius-pill`, off `--bg-switch-track` / on `--bg-inverse`. thumb `--space-12` 원, `--bg-surface` + `--shadow-xs`, on에서 `--space-12`만큼 이동(`--dur-base` `--ease-standard`). 스위치는 `aria-hidden`, 상태는 버튼의 `role="switch"` + `aria-checked`로 전달. `SidebarItem`처럼 `title`·`aria-label`에 `label`이 들어가 접힌 사이드바에서도 이름이 남는다.
 
 `ThemeToggle`(`shell.tsx`, 내부용): `SidebarSwitch icon={Moon} label="다크 모드"` + `useTheme`/`setTheme`. `.sidebar-foot` 맨 위에 둔다.
 
@@ -771,14 +774,14 @@ import { UserAvatar } from '@/components/shell';
 | 언어 | `<html lang="ko">` |
 | 아이콘 버튼 이름 | `IconButton`의 `label` 필수 → `aria-label` + `title` |
 | 현재 위치 | `SidebarItem` `aria-current="page"` |
-| 펼침 상태 | `SidebarSection` `aria-expanded` |
+| 펼침 상태 | `SidebarSection` `aria-expanded`, 사이드바 접기/펼치기 버튼 `aria-expanded` |
 | 켜짐 상태 | `SidebarSwitch` `role="switch"` + `aria-checked` |
 | 랜드마크 | `header.topbar`, `nav.sidebar aria-label="사이드바"`, `main.sheet` |
 | 입력 이름 | 모든 입력에 `aria-label` (명령어 입력, 글 제목 검색, 제목, 내용, 별명) |
 | 상태 알림 | `SaveState` `role="status"` / 실패 `role="alert"`, `.alert` `role="alert"` |
 | 보조 설명 | 내용 `textarea`의 `aria-describedby` → 글자 수 (라이브 영역 아님, 입력마다 낭독하지 않음) |
 | 장식 이미지 | 글 커버는 `aria-hidden="true"` + `alt=""`, 포커스를 받지 않음 |
-| 동작 줄이기 | `prefers-reduced-motion: reduce`에서 스켈레톤 시머 정지 |
+| 동작 줄이기 | `prefers-reduced-motion: reduce`에서 스켈레톤 시머 정지, 사이드바 폭 전환 없음 |
 | 다이얼로그 | `role="alertdialog"`, `aria-modal`, `aria-labelledby`, Esc 닫기, 확정 버튼 `autoFocus` |
 | 검색 결과 | `role="listbox"`/`option` + `aria-selected`, ↑↓/Enter/Esc |
 | 한글 조합 | Enter 처리 시 `e.nativeEvent.isComposing` 확인 (IME 조합 중 제출 방지) |
@@ -853,11 +856,11 @@ import { UserAvatar } from '@/components/shell';
 | 타이포 | `--type-title-lg` · `--type-title` · `--type-heading` · `--type-body` · `--type-label` · `--type-caption` · `--type-meta` |
 | 간격 | `--space-{0,2,4,6,8,10,12,14,16,20,24,32,40,48}` |
 | radius | `--radius-4` · `--radius-6` · `--radius-8` · `--radius-12` · `--radius-pill` |
-| 치수 | `--topbar-h` 56 · `--sidebar-w` 232 · `--header-h` 52 · `--row-h` 32 · `--control-sm/md/lg` 28/36/40 · `--cover-h` 200 · `--cover-h-sm` 140 |
+| 치수 | `--topbar-h` 56 · `--sidebar-w` 232 · `--rail-w` 56 · `--header-h` 52 · `--row-h` 32 · `--control-sm/md/lg` 28/36/40 · `--cover-h` 200 · `--cover-h-sm` 140 |
 | 그림자 | `--shadow-panel` · `--shadow-xs` · `--shadow-md` · `--shadow-lg` |
-| 모션 | `--dur-fast` 100 · `--dur-base` 160 · `--dur-shimmer` 1400 · `--ease-standard` |
+| 모션 | `--dur-fast` 100 · `--dur-base` 160 · `--dur-slow` 240 · `--dur-shimmer` 1400 · `--ease-standard` |
 
-**정의만 있고 쓰지 않는 토큰 (Teamchat 잔재)**: `--gray-700`, `--mint-*`, `--purple-100`, `--green-500`, `--pink-300`, `--bg-pressed`(다크 값만 정의), `--bg-rail-selected`, `--bg-notice`, `--bg-tooltip`, `--bg-badge`, `--text-inverse-muted`, `--status-online`, `--status-alert`, `--font-mono`, `--fs-*`, `--fw-*`, `--lh-*`, `--ls-tight`, `--type-micro`, `--space-*`(`--space-2`·`12`·`16`·`24`·`32` 제외), `--radius-10/16/20`, `--rail-w`, `--detail-w`, `--notice-h`, `--shadow-none`, `--shadow-sm`, `--dur-slow`, `--ease-out`. 삭제하지 말고, 새 UI가 해당 역할을 필요로 할 때 이 토큰부터 쓴다.
+**정의만 있고 쓰지 않는 토큰 (Teamchat 잔재)**: `--gray-700`, `--mint-*`, `--purple-100`, `--green-500`, `--pink-300`, `--bg-pressed`(다크 값만 정의), `--bg-rail-selected`, `--bg-notice`, `--bg-tooltip`, `--bg-badge`, `--text-inverse-muted`, `--status-online`, `--status-alert`, `--font-mono`, `--fs-*`, `--fw-*`, `--lh-*`, `--ls-tight`, `--type-micro`, `--space-*`(`--space-2`·`12`·`16`·`24`·`32` 제외), `--radius-10/16/20`, `--detail-w`, `--notice-h`, `--shadow-none`, `--shadow-sm`, `--ease-out`. 삭제하지 말고, 새 UI가 해당 역할을 필요로 할 때 이 토큰부터 쓴다.
 
 ## 부록 B. 파일 맵
 
@@ -868,7 +871,7 @@ import { UserAvatar } from '@/components/shell';
 | `app/layout.tsx` | Pretendard 로딩, `lang="ko"`, 메타데이터(title "미니 노션"), 테마 인라인 스크립트 + `ThemeSync` |
 | `app/fonts/PretendardVariable.woff2` | 폰트 파일 |
 | `components/ds.tsx` | `Avatar`, `Button`, `IconButton`, `Kbd`, `SearchPill`, `SidebarItem`, `SidebarSection`, `SidebarSwitch`, `Skeleton` |
-| `components/shell.tsx` | `AppShell`(+ 내부 `ThemeToggle`), `SearchBox`, `DeleteDialog`, `UserAvatar` |
+| `components/shell.tsx` | `AppShell`(사이드바 접기/펼치기, 내부 `ThemeToggle`), `SearchBox`, `DeleteDialog`, `UserAvatar` |
 | `app/(app)/layout.tsx` | 인증 화면을 `AppShell`로 감쌈 |
 | `app/(app)/page.tsx` | 업무 페이지 + `CommandInput` (1c/1d/1h) |
 | `app/(app)/pages/[id]/page.tsx` | 글 상세 + `Cover` + `SaveState` + `CharCount` + `NotFound` (1e/1f/1i) |

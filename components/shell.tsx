@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { CircleAlert, CircleUserRound, FileText, LayoutList, Moon, Search } from 'lucide-react';
-import { Avatar, Button, Kbd, SearchPill, SidebarItem, SidebarSection, SidebarSwitch } from './ds';
+import { CircleAlert, CircleUserRound, FileText, LayoutList, Moon, PanelLeftClose, PanelLeftOpen, Search } from 'lucide-react';
+import { Avatar, Button, IconButton, Kbd, SearchPill, SidebarItem, SidebarSection, SidebarSwitch } from './ds';
 import { useAuth, type User } from '@/lib/auth';
 import { useStore } from '@/lib/store';
 import { setTheme, useTheme } from '@/lib/theme';
@@ -14,12 +14,34 @@ export function UserAvatar({ user, size }: { user: User; size: number }) {
   return <Avatar size={size} src={user.avatarUrl} initials={user.nickname.slice(0, 1)} bg="var(--accent)" />;
 }
 
+const SIDEBAR_COLLAPSED_KEY = 'mini-notion:sidebar-collapsed';
+
+/** Sidebar collapsed state, remembered per browser. */
+function useSidebarCollapsed() {
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return typeof window !== 'undefined' && localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggle = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    try {
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? '1' : '0');
+    } catch {}
+  };
+  return [collapsed, toggle] as const;
+}
+
 /** Redirects to /login when signed out (PRD #2), then renders the shell. */
 export function AppShell({ children }: { children: ReactNode }) {
   const { ready, user } = useAuth();
   const { pages } = useStore();
   const router = useRouter();
   const pathname = usePathname();
+  const [collapsed, toggleSidebar] = useSidebarCollapsed();
 
   useEffect(() => {
     if (ready && !user) router.replace('/login');
@@ -43,7 +65,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
       </header>
       <div className="app-body">
-        <nav className="sidebar" aria-label="사이드바">
+        <nav className={`sidebar${collapsed ? ' is-collapsed' : ''}`} aria-label="사이드바">
+          <div className="sidebar-head">
+            <IconButton
+              icon={collapsed ? PanelLeftOpen : PanelLeftClose}
+              label={collapsed ? '사이드바 펼치기' : '사이드바 접기'}
+              aria-expanded={!collapsed}
+              onClick={toggleSidebar}
+            />
+          </div>
           <div className="sidebar-nav">
             <SidebarItem href="/" icon={LayoutList} label="업무 페이지" selected={pathname === '/'} />
             <SidebarItem href="/mypage" icon={CircleUserRound} label="마이 페이지" selected={pathname === '/mypage'} />

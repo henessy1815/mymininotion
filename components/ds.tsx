@@ -120,7 +120,13 @@ export function SidebarItem({
   selected?: boolean;
 }) {
   return (
-    <Link href={href} className={`sb-item${selected ? ' is-selected' : ''}`} aria-current={selected ? 'page' : undefined}>
+    <Link
+      href={href}
+      title={label}
+      aria-label={label}
+      className={`sb-item${selected ? ' is-selected' : ''}`}
+      aria-current={selected ? 'page' : undefined}
+    >
       <span className="sb-item-icon">
         <Icon size={18} />
       </span>
@@ -162,7 +168,15 @@ export function SidebarSwitch({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <button type="button" role="switch" aria-checked={checked} className="sb-item sb-switch" onClick={() => onChange(!checked)}>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      title={label}
+      aria-label={label}
+      className="sb-item sb-switch"
+      onClick={() => onChange(!checked)}
+    >
       <span className="sb-item-icon">
         <Icon size={18} />
       </span>
