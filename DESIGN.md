@@ -1,7 +1,7 @@
 # DESIGN.md — 미니 노션 디자인 가이드
 
 > 현재 코드에 구현된 디자인 결정을 추출한 문서입니다. 새 화면·기능을 만들 때 사람과 AI 에이전트가 같은 결과물을 내는 것이 목표입니다.
-> 기준 시점: 2026-09-29 · Next.js 16.3 · React 19.2 · lucide-react 1.x
+> 기준 시점: 2026-10-12 · Next.js 16.3 · React 19.2 · lucide-react 1.x
 
 ---
 
@@ -51,7 +51,7 @@
 | 가설 | 결과 | 근거 |
 | --- | --- | --- |
 | 차분한 무채색 중심 | ✅ 확인 | 모든 화면 배경·텍스트가 `--gray-*` 기반 semantic 토큰 |
-| 보라는 봇/AI·강조에만 | ✏️ 수정 | 봇·AI 없음. 보라는 **사용자 아바타 기본 배경**, **빈 상태 일러스트**, **링크 hover**에만 사용. `--accent` 토큰 자체는 미사용 |
+| 보라는 봇/AI·강조에만 | ✏️ 수정 | 봇·AI 없음. 보라는 **사용자 아바타 기본 배경**(`--accent`), **빈 상태 일러스트**, **링크 hover**에만 사용 |
 | 빨강=위험/알림, 초록=온라인, 민트=공지 | ✏️ 수정 | 빨강은 삭제·오류·저장 실패에 사용. **초록·민트는 미사용** (해당 UI 없음) |
 | Primary는 검정에 가까운 pill | ✅ 확인 (사용처 1곳) | `.btn-primary` = `--bg-inverse`(#2D2D2D) + `--radius-pill`. 실제 사용은 마이 페이지 "저장" 버튼뿐 |
 | pill / radius-8 | ✅ 확인 + 보완 | 시트·카드·다이얼로그·명령 입력창은 `--radius-12` |
@@ -74,26 +74,27 @@
 | 토큰 | 값 | 코드 주석의 용도 | 미니 노션 사용 |
 | --- | --- | --- | --- |
 | `--gray-0` | `#FFFFFF` | — | `--bg-surface`, `--text-inverse` |
-| `--gray-25` | `#F8F8F8` | sidebar | `--bg-sidebar` + hover 배경(직접 참조) |
+| `--gray-25` | `#F8F8F8` | sidebar | `--bg-sidebar`, `--bg-surface-hover` |
 | `--gray-50` | `#EFEFEF` | app chrome | `--bg-app` |
-| `--gray-100` | `#EBEBEB` | selected row | `--bg-selected`, `Avatar` 기본 배경 |
+| `--gray-100` | `#EBEBEB` | selected row | `--bg-selected` |
 | `--gray-150` | `#E4E4E4` | dividers, segmented thumb | `--border-subtle` |
 | `--gray-200` | `#D9D9D9` | input borders | `--border-default` |
-| `--gray-300` | `#C4C4C4` | — | `.google-mark` 점선 보더 |
-| `--gray-400` | `#A3A3A3` | placeholder | `--text-placeholder` |
+| `--gray-300` | `#C4C4C4` | — | `--border-emphasis` |
+| `--gray-400` | `#A3A3A3` | placeholder | `--text-placeholder`, `--bg-switch-track` |
 | `--gray-500` | `#8A8A8A` | tertiary text | `--text-tertiary` |
 | `--gray-600` | `#6B6B6B` | secondary text | `--text-secondary` |
 | `--gray-700` | `#48484A` | kbd on dark | 미사용 |
 | `--gray-800` | `#313133` | tooltip | `--bg-tooltip` (미사용) |
-| `--gray-850` | `#2D2D2D` | primary button | `--bg-inverse`, 로고 마크 |
-| `--gray-900` | `#1F1F1F` | primary text | `--text-primary`, `--border-strong` |
+| `--gray-850` | `#2D2D2D` | primary button | `--bg-inverse` |
+| `--gray-900` | `#1F1F1F` | primary text | `--text-primary`, `--border-strong`, 다크 테마 `--text-inverse` |
 | `--mint-100` / `--mint-200` | `#DCE9E9` / `#C9DCDC` | notice banner | 미사용 |
-| `--purple-50` | `#F1EEFF` | — | `--bg-accent-soft`, 빈 상태 일러스트 배경 |
-| `--purple-100` / `--purple-300` | `#E4DEFF` / `#B3A3FE` | — | 미사용 |
-| `--purple-500` | `#8065FE` | bot avatar, illustration | `--accent`, 사용자 아바타 기본 배경 |
+| `--purple-50` | `#F1EEFF` | — | `--bg-accent-soft` |
+| `--purple-100` | `#E4DEFF` | — | 미사용 |
+| `--purple-300` | `#B3A3FE` | — | 다크 테마 `--text-accent` |
+| `--purple-500` | `#8065FE` | bot avatar, illustration | `--accent` |
 | `--purple-600` | `#6A4FF0` | — | `--text-accent` |
-| `--red-500` | `#E5485F` | new-message divider, notice dot | `--text-danger`, `--status-alert`, 위험 버튼 |
-| `--red-100` | `#FBE3E7` | — | 오류 `.alert` 배경 |
+| `--red-500` | `#E5485F` | new-message divider, notice dot | `--text-danger`, `--status-alert`, `--bg-danger` |
+| `--red-100` | `#FBE3E7` | — | `--bg-danger-soft` |
 | `--green-500` | `#2EAB59` | online status, support | `--status-online` (미사용) |
 | `--pink-300` | `#E8B6EA` | AI writer glyph tint | 미사용 |
 
@@ -106,10 +107,16 @@
 | `--bg-app` | `--gray-50` | `body`, `.app`, `.login-screen` — 가장 바깥 회색 바탕 |
 | `--bg-sidebar` | `--gray-25` | `.sidebar` |
 | `--bg-surface` | `--gray-0` | `.sheet`, 카드, 다이얼로그, 드롭다운, pill, 입력창 |
+| `--bg-surface-hover` | `--gray-25` | 흰 배경(`--bg-surface`) 요소의 hover (`.btn-secondary`, pill, `.google-btn`, 목록 행) |
 | `--bg-hover` | `rgba(0,0,0,.04)` | 투명 배경 요소의 hover (`.btn-ghost`, `.icon-btn`, `.sb-item`) |
 | `--bg-pressed` | `rgba(0,0,0,.07)` | 정의만 있음 (미사용) |
 | `--bg-selected` | `--gray-100` | 선택 상태 (`.sb-item.is-selected`, `.icon-btn.is-active`, 검색·명령 결과의 활성 항목) |
-| `--bg-inverse` | `--gray-850` | Primary 버튼 |
+| `--bg-inverse` | `--gray-850` | Primary 버튼, 로고 마크, 켜진 스위치 트랙 |
+| `--bg-inverse-hover` | `#000000` | Primary 버튼 hover |
+| `--bg-danger` / `--bg-danger-hover` | `--red-500` / `#D23A51` | Danger 버튼 / hover |
+| `--bg-danger-soft` | `--red-100` | 오류 `.alert` 배경 |
+| `--bg-overlay` | `rgba(0,0,0,.28)` | 다이얼로그 딤 |
+| `--bg-switch-track` | `--gray-400` | 꺼진 스위치 트랙 (`SidebarSwitch`) |
 | `--bg-accent-soft` | `--purple-50` | 보라 톤 배경 (빈 상태 일러스트, 글 커버 기본 바탕·실패 대체) |
 | `--bg-skeleton` | `--gray-100` | 스켈레톤 자리표시 바탕 (`.skeleton`) |
 | `--bg-skeleton-shine` | `rgba(255,255,255,.6)` | 스켈레톤 시머의 빛 띠 (그라디언트 중앙색) |
@@ -123,7 +130,8 @@
 | `--text-secondary` | `#6B6B6B` | 설명문, 섹션 헤더, breadcrumb 부모, 개수(`.sheet-count`) |
 | `--text-tertiary` | `#8A8A8A` | 메타 정보(날짜), 빈 상태 보조 문구, 아이콘 보조색, 저장 상태 |
 | `--text-placeholder` | `#A3A3A3` | placeholder, breadcrumb 구분자 `/`, 제목 없는 글 아이콘 |
-| `--text-inverse` | `#FFFFFF` | 어두운/컬러 배경 위 텍스트 (Primary·Danger 버튼, 아바타 이니셜) |
+| `--text-inverse` | `#FFFFFF` | `--bg-inverse` 위 텍스트 (Primary 버튼, 로고 마크). 다크 테마에서는 어두운 색으로 뒤집힌다 |
+| `--text-on-color` | `#FFFFFF` | 컬러 면 위 텍스트 (Danger 버튼, 아바타 이니셜). 테마와 무관하게 흰색 |
 | `--text-danger` | `#E5485F` | 오류 문구 (`.command-error`, `.mp-field-hint.is-error`) |
 | `--text-accent` | `#6A4FF0` | 링크 hover, 빈 상태 일러스트 아이콘 |
 
@@ -134,12 +142,13 @@
 | `--border-subtle` | `#E4E4E4` | 구분선 (`.sheet-header` 하단, 목록 행, `.editor-divider`, `.mp-section` 사이) |
 | `--border-default` | `#D9D9D9` | 입력창·Secondary 버튼·`Kbd` 테두리 |
 | `--border-strong` | `#1F1F1F` | 입력창 focus (`:focus-within`) |
+| `--border-emphasis` | `--gray-300` | `.google-mark` 점선 보더 |
 
 **상태**
 
 | 토큰 | 값 | 사용처 |
 | --- | --- | --- |
-| `--accent` | `--purple-500` | 정의만 있음 — 사용자 아바타는 `--purple-500`을 직접 참조 중 |
+| `--accent` | `--purple-500` | 사용자 아바타 기본 배경 (`UserAvatar`) |
 | `--status-alert` | `--red-500` | 정의만 있음 |
 | `--status-online` | `--green-500` | 미사용 (온라인 상태 UI 없음) |
 
@@ -147,7 +156,7 @@
 
 | 색 | 언제 쓰는가 | 실제 사용처 |
 | --- | --- | --- |
-| **보라** | 사용자 정체성과 "비어 있음"을 부드럽게 채울 때 | `UserAvatar` 기본 배경 (`shell.tsx:12`), `.empty-illust` 배경·아이콘 (`globals.css:209-212`), `a:hover` (`tokens.css:132`) |
+| **보라** | 사용자 정체성과 "비어 있음"을 부드럽게 채울 때 | `UserAvatar` 기본 배경(`--accent`), `.empty-illust` 배경·아이콘(`--bg-accent-soft`, `--text-accent`), `a:hover` |
 | **빨강** | 되돌릴 수 없는 행동, 실패, 입력 오류 | `.btn-danger`(삭제 확정), `.save-state.is-failed`, `.alert`(로그인·이미지 오류), `.command-error`, `.mp-field-hint.is-error` |
 | **초록 / 민트 / 분홍** | 현재 쓰지 않는다 | 온라인 상태·공지 배너·AI 기능이 Non-Goal이므로 새로 쓰지 않는다 |
 
@@ -160,6 +169,41 @@
 - ❌ primitive 직접 참조 (`var(--gray-25)`, `var(--red-500)`) — semantic으로 매핑된 토큰을 쓴다.
 - ❌ 새 브랜드 컬러·그라디언트 추가. 예외: `.skeleton`의 시머 빛 띠(`transparent → --bg-skeleton-shine → transparent`)만 허용한다.
 - ❌ 색만으로 상태 전달 — 저장 실패처럼 아이콘(`CircleAlert`)과 텍스트를 함께 둔다.
+
+### 2.5 다크 테마
+
+출처: `app/styles/tokens.css` (`:root[data-theme="dark"]`), `lib/theme.ts`, `app/layout.tsx`
+
+| 항목 | 규칙 |
+| --- | --- |
+| 전환 방식 | `<html data-theme="light\|dark">`. 다크 블록은 **semantic 토큰과 그림자만** 덮어쓴다. primitive는 그대로 |
+| 저장 | localStorage `mini-notion:theme`. 저장값이 없으면 OS 설정(`prefers-color-scheme`)을 따른다 |
+| 깜빡임 방지 | `app/layout.tsx` `<head>`의 인라인 스크립트가 첫 페인트 전에 `data-theme`을 넣는다 (`<html suppressHydrationWarning>`). 개발 모드 Strict Mode 재마운트가 속성을 지우면 `ThemeSync`가 다시 넣는다 |
+| 상태 읽기·변경 | `useTheme()` → `'light' \| 'dark'`, `setTheme(theme)` (`lib/theme.ts`). 다른 탭 변경도 `storage` 이벤트로 반영 |
+| 네이티브 UI | `color-scheme: light \| dark`로 스크롤바·폼 컨트롤도 함께 바뀐다 |
+| 진입점 | 사이드바 하단 "다크 모드" 스위치 (§7.12). 모바일은 사이드바가 없어 OS 설정을 따른다 |
+
+**다크 값** (밝은 테마 대비 바뀌는 것만)
+
+| 토큰 | 값 | 토큰 | 값 |
+| --- | --- | --- | --- |
+| `--bg-app` | `#141414` | `--text-primary` | `#EDEDED` |
+| `--bg-sidebar` | `#1B1B1B` | `--text-secondary` | `#ABABAB` |
+| `--bg-surface` | `#202020` | `--text-tertiary` | `#8F8F8F` |
+| `--bg-surface-hover` | `#272727` | `--text-placeholder` | `#666666` |
+| `--bg-hover` / `--bg-pressed` | `rgba(255,255,255,.06)` / `.1` | `--text-inverse` | `--gray-900` |
+| `--bg-selected` | `#2E2E2E` | `--text-danger` | `#FF6B80` |
+| `--bg-inverse` / `-hover` | `#EDEDED` / `#FFFFFF` | `--text-accent` | `--purple-300` |
+| `--bg-accent-soft` | `#2A2640` | `--border-subtle` | `#2E2E2E` |
+| `--bg-skeleton` / `-shine` | `#2A2A2A` / `rgba(255,255,255,.06)` | `--border-default` | `#3D3D3D` |
+| `--bg-danger-hover` | `#EE5C71` | `--border-strong` | `#EDEDED` |
+| `--bg-danger-soft` | `#3B1F25` | `--border-emphasis` | `#555555` |
+| `--bg-overlay` | `rgba(0,0,0,.6)` | `--shadow-*` | 검정 그림자를 진하게 + 흰 1px 링 |
+| `--bg-switch-track` | `#5A5A5A` | | |
+
+- 깊이 규칙은 그대로: `--bg-app`(가장 어두움) → `--bg-sidebar` → `--bg-surface`(가장 밝음). hover는 한 톤 **밝게**.
+- 다크에서도 바뀌지 않는 것: `--bg-danger`(`--red-500`), `--accent`(`--purple-500`), `--text-on-color`(흰색).
+- ✅ 새 UI가 semantic 토큰만 쓰면 다크 테마는 자동으로 맞는다. primitive·hex를 쓰면 다크에서 깨진다.
 
 ---
 
@@ -273,7 +317,9 @@
     ├─ nav.sidebar (--sidebar-w 232, --bg-sidebar, --radius-12)
     │   ├─ .sidebar-nav   SidebarItem ×2 (업무 페이지 / 마이 페이지)
     │   ├─ SidebarSection "최근 글"  → SidebarItem ×최대 5 (제목 있는 글만)
-    │   └─ .sidebar-hint  [/page]로 새 글 만들기   (margin-top: auto → 하단 고정)
+    │   └─ .sidebar-foot  (margin-top: auto → 하단 고정, gap 2)
+    │       ├─ SidebarSwitch "다크 모드" (ThemeToggle)
+    │       └─ .sidebar-hint  [/page]로 새 글 만들기
     └─ main.sheet (flex 1, --bg-surface, --radius-12)
         ├─ .sheet-header (--header-h 52, 하단 1px --border-subtle)
         └─ .sheet-scroll (overflow-y: auto)
@@ -319,7 +365,7 @@
 | `--shadow-xs` | `.search-pill`, `.brand-pill`, `.user-pill`, `.search-input-wrap` | `--bg-app` 위에 떠 있는 작은 흰 pill |
 | `--shadow-sm` | — | 미사용 |
 | `--shadow-md` | `.search-results`, `.command-menu` | 콘텐츠 위에 뜨는 드롭다운 |
-| `--shadow-lg` | `.dialog` | 모달 다이얼로그 (배경 딤 `rgba(0,0,0,.28)`과 함께) |
+| `--shadow-lg` | `.dialog` | 모달 다이얼로그 (배경 딤 `--bg-overlay`와 함께) |
 
 - 시트·사이드바는 그림자 없이 **배경 톤 차이**(`--bg-app` vs `--bg-surface`/`--bg-sidebar`)로 분리한다.
 - 선택 상태의 pill은 그림자를 없앤다 (`.user-pill.is-selected { box-shadow: none }`).
@@ -329,9 +375,9 @@
 | 토큰 | 값 | 사용처 |
 | --- | --- | --- |
 | `--dur-fast` | 100ms | 배경색 전환 (`.btn`, `.icon-btn`) |
-| `--dur-base` | 160ms | 사이드바 섹션 chevron 회전 |
+| `--dur-base` | 160ms | 사이드바 섹션 chevron 회전, 스위치 thumb 이동 |
 | `--dur-slow` | 240ms | 미사용 — 패널 등장처럼 큰 이동에 예약 |
-| `--ease-standard` | `cubic-bezier(.2,0,0,1)` | `.btn` transition |
+| `--ease-standard` | `cubic-bezier(.2,0,0,1)` | `.btn`, `.switch` transition |
 | `--ease-out` | `cubic-bezier(0,0,.2,1)` | 미사용 |
 | `.spin` | `spin 1s linear infinite` | 로딩 아이콘(`LoaderCircle`) |
 | `--dur-shimmer` | 1400ms | `.skeleton::after` 시머(`shimmer` 키프레임, `transform: translateX` -100% → 100%, `--ease-standard`, 무한 반복). `prefers-reduced-motion: reduce`에서는 빛 띠를 숨겨 정적 자리표시만 남긴다 |
@@ -343,8 +389,9 @@
 | 상태 | 표현 | 예 |
 | --- | --- | --- |
 | hover (투명 배경 요소) | `--bg-hover` | `.btn-ghost`, `.icon-btn`, `.sb-item` |
-| hover (흰 배경 요소) | `--gray-25`로 한 톤 어둡게 | `.btn-secondary`, `.search-pill`, `.brand-pill`, `.google-btn`, 목록 행 |
-| hover (어두운 배경) | 더 어둡게 (`#000`, `#d23a51` 하드코딩) | `.btn-primary`, `.btn-danger` |
+| hover (흰 배경 요소) | `--bg-surface-hover` (라이트는 한 톤 어둡게, 다크는 한 톤 밝게) | `.btn-secondary`, `.search-pill`, `.brand-pill`, `.google-btn`, 목록 행 |
+| hover (inverse·컬러 배경) | `--bg-inverse-hover`, `--bg-danger-hover` | `.btn-primary`, `.btn-danger` |
+| on / off (스위치) | 트랙 `--bg-switch-track` → `--bg-inverse`, thumb `translateX(--space-12)` | `SidebarSwitch` (`aria-checked`) |
 | pressed | 별도 스타일 없음 (`--bg-pressed` 미사용) | — |
 | selected / active | `--bg-selected` + (사이드바는) `font-weight: 600` | `.sb-item.is-selected`, `.icon-btn.is-active`, `.search-result.is-active` |
 | focus (입력) | 보더 → `--border-strong` | `.command-box:focus-within`, `.mp-field:focus-within` |
@@ -367,7 +414,7 @@
 | `Button` 내부 (sm) | 14 |
 | `IconButton` 기본 | `Math.round(size * 0.56)` → 32px 버튼에 18 |
 | `IconButton` 명시값 | 30→16, 32→17, 44→19~20 |
-| `SidebarItem` | 18 (20×20 박스 안) |
+| `SidebarItem`, `SidebarSwitch` | 18 (20×20 박스 안) |
 | 검색 pill·입력, 저장 상태 | 15 |
 | 검색 결과, 명령 항목, `.alert` | 16 |
 | 목록 행, 명령 입력창 | 18 |
@@ -375,7 +422,7 @@
 | 모바일 뒤로가기 | 22 |
 | 빈 상태·NotFound 일러스트 | 40 (`strokeWidth={1.5}`) |
 
-**사용 중인 아이콘과 의미**: `LayoutList`(업무 페이지) · `CircleUserRound`(마이 페이지) · `FileText`(제목 있는 글) · `File`(제목 없는 글) · `FilePlus`(`/page` 명령) · `SquarePen`(명령 입력창) · `Search` · `Trash2`(삭제) · `ChevronLeft`(뒤로) · `ChevronDown`(섹션 접기) · `Check`(저장됨) · `LoaderCircle`(저장 중·로그인 중) · `CircleAlert`(오류) · `FileX`(글 없음) · `LogOut`
+**사용 중인 아이콘과 의미**: `LayoutList`(업무 페이지) · `CircleUserRound`(마이 페이지) · `FileText`(제목 있는 글) · `File`(제목 없는 글) · `FilePlus`(`/page` 명령) · `SquarePen`(명령 입력창) · `Search` · `Trash2`(삭제) · `ChevronLeft`(뒤로) · `ChevronDown`(섹션 접기) · `Check`(저장됨) · `LoaderCircle`(저장 중·로그인 중) · `CircleAlert`(오류) · `FileX`(글 없음) · `LogOut` · `Moon`(다크 모드)
 
 ---
 
@@ -491,9 +538,9 @@ import { LogOut } from 'lucide-react';
 
 ### 7.7 Avatar / UserAvatar
 
-`Avatar`: `size`(기본 24), `src`, `initials`, `bg`(기본 `var(--gray-100)`). 원형, 이니셜은 `--text-inverse` 600, 글자 크기 `size × 0.4`. 이미지는 `object-fit: cover`, `alt=""`.
+`Avatar`: `size`(기본 24), `src`, `initials`, `bg`(기본 `var(--bg-selected)`). 원형, 이니셜은 `--text-on-color` 600, 글자 크기 `size × 0.4`. 이미지는 `object-fit: cover`, `alt=""`.
 
-`UserAvatar`(shell): `user`, `size` — 이미지가 없으면 별명 첫 글자 + `--purple-500` 배경.
+`UserAvatar`(shell): `user`, `size` — 이미지가 없으면 별명 첫 글자 + `--accent` 배경.
 
 | 위치 | size |
 | --- | --- |
@@ -527,7 +574,7 @@ import { UserAvatar } from '@/components/shell';
 
 | 요소 | 규칙 |
 | --- | --- |
-| 컨테이너 | `.dialog` 380px, `--radius-12`, `--shadow-lg`, 딤 `rgba(0,0,0,.28)` |
+| 컨테이너 | `.dialog` 380px, `--radius-12`, `--shadow-lg`, 딤 `--bg-overlay` |
 | 제목 | 질문형 — "이 글을 삭제할까요?" (`--type-title`) |
 | 설명 | 대상 + 결과 — "‘{title}’ 글이 삭제됩니다. 삭제한 글은 복구할 수 없습니다." (`--type-body`, `--text-secondary`) |
 | 버튼 | 오른쪽 정렬, `secondary` "취소" → `danger` "삭제" (최소 폭 72px) |
@@ -567,6 +614,28 @@ import { UserAvatar } from '@/components/shell';
 - 실제 콘텐츠와 **같은 크기**로 놓아 로딩이 끝나도 레이아웃이 움직이지 않게 한다.
 - 영역(이미지·카드)을 채우는 로딩에 쓴다. 버튼·상태 표시처럼 짧은 라벨이 있는 곳은 기존대로 `LoaderCircle .spin`.
 - 현재 사용처: 글 상세 커버(`.page-cover`).
+
+### 7.12 SidebarSwitch / ThemeToggle
+
+`SidebarSwitch`(`ds.tsx`): 사이드바에서 켜고 끄는 설정 한 줄. `SidebarItem`과 같은 `.sb-item` 모양(높이 `--row-h`, hover `--bg-hover`)에 오른쪽 스위치가 붙는다.
+
+| prop | 타입 |
+| --- | --- |
+| `icon` | `LucideIcon` (18px) |
+| `label` | `string` — 설정 이름(명사). 상태에 따라 바꾸지 않는다 |
+| `checked` | `boolean` → `aria-checked` |
+| `onChange` | `(checked: boolean) => void` |
+
+스위치(`.switch`): 트랙 `--control-sm`(28)×`--space-16`, `--radius-pill`, off `--bg-switch-track` / on `--bg-inverse`. thumb `--space-12` 원, `--bg-surface` + `--shadow-xs`, on에서 `--space-12`만큼 이동(`--dur-base` `--ease-standard`). 스위치는 `aria-hidden`, 상태는 버튼의 `role="switch"` + `aria-checked`로 전달.
+
+`ThemeToggle`(`shell.tsx`, 내부용): `SidebarSwitch icon={Moon} label="다크 모드"` + `useTheme`/`setTheme`. `.sidebar-foot` 맨 위에 둔다.
+
+```tsx
+<SidebarSwitch icon={Moon} label="다크 모드" checked={theme === 'dark'} onChange={(on) => setTheme(on ? 'dark' : 'light')} />
+```
+
+- ✅ 바로 적용되는 on/off 설정에만 쓴다 (저장 버튼 없음).
+- ❌ 페이지 이동에는 쓰지 않는다 — `SidebarItem`을 쓴다.
 
 ---
 
@@ -695,6 +764,7 @@ import { UserAvatar } from '@/components/shell';
 | 아이콘 버튼 이름 | `IconButton`의 `label` 필수 → `aria-label` + `title` |
 | 현재 위치 | `SidebarItem` `aria-current="page"` |
 | 펼침 상태 | `SidebarSection` `aria-expanded` |
+| 켜짐 상태 | `SidebarSwitch` `role="switch"` + `aria-checked` |
 | 랜드마크 | `header.topbar`, `nav.sidebar aria-label="사이드바"`, `main.sheet` |
 | 입력 이름 | 모든 입력에 `aria-label` (명령어 입력, 글 제목 검색, 제목, 내용, 별명) |
 | 상태 알림 | `SaveState` `role="status"` / 실패 `role="alert"`, `.alert` `role="alert"` |
@@ -708,6 +778,9 @@ import { UserAvatar } from '@/components/shell';
 
 ### 10.2 대비 (WCAG 2.x, 흰 배경 기준 계산값)
 
+> 다크 테마(`--bg-surface` `#202020` 기준): `--text-primary` 14.6:1, `--text-secondary` 7.1:1, `--text-tertiary` 5.0:1, `--text-danger` 5.9:1, `--text-accent` 7.4:1 — 모두 AA 통과. `--text-placeholder` 2.8:1(장식 전용). `--text-on-color` on `--bg-danger`는 라이트와 같은 3.9:1.
+
+
 | 전경 | 대비 | 판정 |
 | --- | --- | --- |
 | `--text-primary` | 16.5:1 | AA/AAA 통과 |
@@ -716,7 +789,7 @@ import { UserAvatar } from '@/components/shell';
 | `--text-inverse` on `--bg-inverse` | 13.8:1 | 통과 |
 | `--text-tertiary` | 3.5:1 | ⚠️ 본문 AA 미달 (12~13px 메타에 사용 중) |
 | `--text-danger` | 3.9:1 | ⚠️ 본문 AA 미달 (13px 오류 문구) |
-| `--text-inverse` on `--red-500` | 3.9:1 | ⚠️ 14px/600 버튼 라벨 AA 미달 |
+| `--text-on-color` on `--bg-danger` | 3.9:1 | ⚠️ 14px/600 버튼 라벨 AA 미달 |
 | `--text-placeholder` | 2.5:1 | placeholder·장식 전용 (정보 전달에 쓰지 않는다) |
 
 **규칙**: 읽어야 하는 정보(오류 원인, 날짜)는 `--text-secondary` 이상을 우선 고려한다. `--text-tertiary`는 없어도 이해에 지장 없는 보조 정보에만 쓴다.
@@ -744,11 +817,12 @@ import { UserAvatar } from '@/components/shell';
 
 ## 11. 새 UI를 만들 때 체크리스트
 
-- [ ] 기존 DS 컴포넌트(`Button`, `IconButton`, `Kbd`, `SidebarItem`, `UserAvatar`, `SearchBox`, `DeleteDialog`)로 해결 가능한지 먼저 확인했다.
+- [ ] 기존 DS 컴포넌트(`Button`, `IconButton`, `Kbd`, `SidebarItem`, `SidebarSwitch`, `UserAvatar`, `SearchBox`, `DeleteDialog`)로 해결 가능한지 먼저 확인했다.
 - [ ] 색은 semantic 토큰(`--bg-*`, `--text-*`, `--border-*`)만 썼다. hex·rgba·primitive 직접 참조가 없다.
 - [ ] 글자는 `font: var(--type-*)` 역할 토큰으로 지정했다. 스케일 밖 크기가 필요하면 이유가 있다.
 - [ ] 간격은 `var(--space-*)`, 모서리는 `var(--radius-*)`, 높이는 `--control-*`/`--row-h`를 썼다.
 - [ ] 새 토큰·컴포넌트가 필요하면 `tokens.css`·`ds.tsx`에 먼저 추가하고 DESIGN.md를 갱신했다.
+- [ ] 다크 테마(`data-theme="dark"`)에서도 확인했다. 새 색 토큰을 추가했다면 다크 블록에도 값을 넣었다.
 - [ ] 그림자는 역할(고정 pill `xs` / 드롭다운 `md` / 다이얼로그 `lg`)에 맞췄다.
 - [ ] 아이콘은 `lucide-react`, 크기는 §6 표를 따랐다. 아이콘만 있는 버튼에 `label`을 넣었다.
 - [ ] 767px 이하에서 확인했다: `.d-only`/`.m-only` 처리, 터치 타깃 44px, 360px 폭에서 깨짐 없음.
@@ -765,9 +839,9 @@ import { UserAvatar } from '@/components/shell';
 
 | 분류 | 자주 쓰는 토큰 |
 | --- | --- |
-| 배경 | `--bg-app` · `--bg-sidebar` · `--bg-surface` · `--bg-hover` · `--bg-selected` · `--bg-inverse` · `--bg-accent-soft` · `--bg-skeleton` · `--bg-skeleton-shine` |
-| 텍스트 | `--text-primary` · `--text-secondary` · `--text-tertiary` · `--text-placeholder` · `--text-inverse` · `--text-danger` · `--text-accent` |
-| 보더 | `--border-subtle` · `--border-default` · `--border-strong` |
+| 배경 | `--bg-app` · `--bg-sidebar` · `--bg-surface` · `--bg-surface-hover` · `--bg-hover` · `--bg-selected` · `--bg-inverse` · `--bg-inverse-hover` · `--bg-danger` · `--bg-danger-hover` · `--bg-danger-soft` · `--bg-overlay` · `--bg-accent-soft` · `--bg-skeleton` · `--bg-skeleton-shine` · `--bg-switch-track` |
+| 텍스트 | `--text-primary` · `--text-secondary` · `--text-tertiary` · `--text-placeholder` · `--text-inverse` · `--text-on-color` · `--text-danger` · `--text-accent` |
+| 보더 | `--border-subtle` · `--border-default` · `--border-strong` · `--border-emphasis` |
 | 타이포 | `--type-title-lg` · `--type-title` · `--type-heading` · `--type-body` · `--type-label` · `--type-caption` · `--type-meta` |
 | 간격 | `--space-{0,2,4,6,8,10,12,14,16,20,24,32,40,48}` |
 | radius | `--radius-4` · `--radius-6` · `--radius-8` · `--radius-12` · `--radius-pill` |
@@ -775,7 +849,7 @@ import { UserAvatar } from '@/components/shell';
 | 그림자 | `--shadow-panel` · `--shadow-xs` · `--shadow-md` · `--shadow-lg` |
 | 모션 | `--dur-fast` 100 · `--dur-base` 160 · `--dur-shimmer` 1400 · `--ease-standard` |
 
-**정의만 있고 쓰지 않는 토큰 (Teamchat 잔재)**: `--gray-700`, `--mint-*`, `--purple-100/300`, `--green-500`, `--pink-300`, `--bg-pressed`, `--bg-rail-selected`, `--bg-notice`, `--bg-tooltip`, `--bg-badge`, `--text-inverse-muted`, `--accent`, `--status-online`, `--status-alert`, `--font-mono`, `--fs-*`, `--fw-*`, `--lh-*`, `--ls-tight`, `--type-micro`, `--space-*`(`--space-12`·`24`·`32` 제외), `--radius-10/16/20`, `--rail-w`, `--detail-w`, `--notice-h`, `--shadow-none`, `--shadow-sm`, `--dur-slow`, `--ease-out`. 삭제하지 말고, 새 UI가 해당 역할을 필요로 할 때 이 토큰부터 쓴다.
+**정의만 있고 쓰지 않는 토큰 (Teamchat 잔재)**: `--gray-700`, `--mint-*`, `--purple-100`, `--green-500`, `--pink-300`, `--bg-pressed`(다크 값만 정의), `--bg-rail-selected`, `--bg-notice`, `--bg-tooltip`, `--bg-badge`, `--text-inverse-muted`, `--status-online`, `--status-alert`, `--font-mono`, `--fs-*`, `--fw-*`, `--lh-*`, `--ls-tight`, `--type-micro`, `--space-*`(`--space-2`·`12`·`16`·`24`·`32` 제외), `--radius-10/16/20`, `--rail-w`, `--detail-w`, `--notice-h`, `--shadow-none`, `--shadow-sm`, `--dur-slow`, `--ease-out`. 삭제하지 말고, 새 UI가 해당 역할을 필요로 할 때 이 토큰부터 쓴다.
 
 ## 부록 B. 파일 맵
 
@@ -783,10 +857,10 @@ import { UserAvatar } from '@/components/shell';
 | --- | --- |
 | `app/styles/tokens.css` | 디자인 토큰 (colors / typography / spacing / effects / base) |
 | `app/globals.css` | 리셋, DS 클래스, 화면별 스타일, 모바일 미디어 쿼리 |
-| `app/layout.tsx` | Pretendard 로딩, `lang="ko"`, 메타데이터(title "미니 노션") |
+| `app/layout.tsx` | Pretendard 로딩, `lang="ko"`, 메타데이터(title "미니 노션"), 테마 인라인 스크립트 + `ThemeSync` |
 | `app/fonts/PretendardVariable.woff2` | 폰트 파일 |
-| `components/ds.tsx` | `Avatar`, `Button`, `IconButton`, `Kbd`, `SearchPill`, `SidebarItem`, `SidebarSection`, `Skeleton` |
-| `components/shell.tsx` | `AppShell`, `SearchBox`, `DeleteDialog`, `UserAvatar` |
+| `components/ds.tsx` | `Avatar`, `Button`, `IconButton`, `Kbd`, `SearchPill`, `SidebarItem`, `SidebarSection`, `SidebarSwitch`, `Skeleton` |
+| `components/shell.tsx` | `AppShell`(+ 내부 `ThemeToggle`), `SearchBox`, `DeleteDialog`, `UserAvatar` |
 | `app/(app)/layout.tsx` | 인증 화면을 `AppShell`로 감쌈 |
 | `app/(app)/page.tsx` | 업무 페이지 + `CommandInput` (1c/1d/1h) |
 | `app/(app)/pages/[id]/page.tsx` | 글 상세 + `Cover` + `SaveState` + `CharCount` + `NotFound` (1e/1f/1i) |
@@ -796,6 +870,7 @@ import { UserAvatar } from '@/components/shell';
 | `lib/format.ts` | 날짜·제목·글자 수 표기 |
 | `lib/text.ts` | 글자 수 계산 (`countCharacters`, grapheme 단위) |
 | `lib/store.ts` | 글 데이터 레이어 (localStorage) |
+| `lib/theme.ts` | 라이트/다크 테마 (`useTheme`, `setTheme`, `ThemeSync`) — localStorage `mini-notion:theme` |
 | `lib/auth.ts` | 로그인 사용자 (`useAuth`, `authActions`) — Supabase Auth(Google) + `profile` 테이블(`name`) |
 | `lib/supabase/client.ts` | 브라우저 전용 Supabase 클라이언트 — 세션을 localStorage에 저장 (PKCE) |
 | `app/auth/callback/page.tsx` | OAuth 콜백: 브라우저에서 code 교환 (`?error=cancelled` · `failed`) |
@@ -809,10 +884,6 @@ import { UserAvatar } from '@/components/shell';
 | # | 분류 | 내용 | 위치 |
 | --- | --- | --- | --- |
 | 1 | 간격 토큰 미사용 | `--space-*`가 `.editor-count` 1곳 외에는 쓰이지 않음. 나머지 padding·gap·margin이 px 하드코딩 | `app/globals.css` 전반 (예: 18, 85, 104, 107, 170, 225, 251), 인라인 `marginTop` (`app/login/page.tsx:35,36,49,58`) |
-| 2 | hex·rgba 하드코딩 | `#000`(Primary hover), `#d23a51`(Danger hover), `#fff`(로고 마크 ×2), `rgba(0,0,0,.28)`(다이얼로그 딤) | `app/globals.css:30, 36, 93, 149, 243` |
-| 3 | primitive 직접 참조 | hover에 `--gray-25` (semantic 없음) | `app/globals.css:32, 62, 91, 101, 157, 200` |
-| 4 | primitive 직접 참조 | `--red-500`을 `--text-danger`/`--status-alert` 대신 사용, `--red-100`은 semantic 없음 | `app/globals.css:35, 165, 167, 223` |
-| 5 | primitive 직접 참조 | `--gray-850`(→ `--bg-inverse`), `--purple-50`(→ `--bg-accent-soft`), `--purple-500`(→ `--accent`), `--gray-300`, `--gray-100` | `app/globals.css:93, 149, 160, 210`; `components/shell.tsx:12`; `components/ds.tsx:17` |
 | 6 | 타입 토큰 우회 | `--type-*` 대신 `font:` 단축 속성 하드코딩. 이 중 `600 14px/1.4`(= `--type-heading`), `500 14px/1.4`(= `--type-label`)는 토큰과 값이 같음 | `app/globals.css:140, 202, 272` 외 21, 52, 60, 68, 78, 89, 99, 117, 131, 155, 178, 184, 222, 236, 267 |
 | 7 | 스케일 밖 폰트 크기 | 15px, 22px, 28px, 행간 1.75·1.35 — 역할 토큰 없음 | `app/globals.css:150, 178, 229, 236, 289, 293` |
 | 8 | 인라인 스타일 | 21곳. 클래스로 옮길 수 있는 레이아웃·타이포가 대부분 (로그인 제목·부제·안내, NotFound 문구, 명령 항목 텍스트, `.alert` 정렬 덮어쓰기 등) | `app/login/page.tsx:35-61`; `app/(app)/pages/[id]/page.tsx:82, 85, 121, 176-178`; `app/(app)/page.tsx:29, 56, 60, 143-145`; `app/(app)/mypage/page.tsx:100-101` |
