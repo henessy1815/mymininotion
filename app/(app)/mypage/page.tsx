@@ -8,6 +8,7 @@ import { UserAvatar } from '@/components/shell';
 import { authActions, useAuth, type User } from '@/lib/auth';
 
 const NICKNAME_MAX = 20;
+const BIO_MAX = 200;
 
 /** 1g 마이 페이지 */
 export default function MyPage() {
@@ -24,6 +25,7 @@ export default function MyPage() {
           <div className="mypage-inner">
             <AvatarSection user={user} />
             <NicknameSection user={user} />
+            <BioSection user={user} />
             <AccountSection user={user} />
           </div>
         </div>
@@ -101,6 +103,67 @@ function NicknameSection({ user }: { user: User }) {
       {invalid && <span className="mp-field-hint is-error">별명을 입력해 주세요. 공백만으로는 저장할 수 없어요.</span>}
       {savedMsg && !invalid && <span className="mp-field-hint">별명을 저장했어요.</span>}
       {saveFailed && <span className="mp-field-hint is-error">별명을 저장하지 못했어요. 다시 시도해 주세요.</span>}
+    </section>
+  );
+}
+
+function BioSection({ user }: { user: User }) {
+  const [value, setValue] = useState(user.bio);
+  const [savedMsg, setSavedMsg] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const trimmed = value.trim();
+  const unchanged = trimmed === user.bio;
+
+  return (
+    <section className="mp-section">
+      <div className="mp-head">
+        <span className="mp-head-title">자기소개</span>
+        <span className="mp-head-desc">나를 짧게 소개해 보세요. 비워 두고 저장하면 자기소개가 지워져요.</span>
+      </div>
+      <form
+        className="mp-bio-form"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          if (unchanged || saving) return;
+          setSaving(true);
+          setSaveFailed(false);
+          try {
+            await authActions.updateBio(trimmed);
+            setValue(trimmed);
+            setSavedMsg(true);
+          } catch {
+            setSaveFailed(true);
+          } finally {
+            setSaving(false);
+          }
+        }}
+      >
+        <label className="mp-field is-multiline">
+          <textarea
+            value={value}
+            maxLength={BIO_MAX}
+            rows={4}
+            placeholder="자기소개를 입력하세요"
+            aria-label="자기소개"
+            onChange={(e) => {
+              setValue(e.target.value);
+              setSavedMsg(false);
+              setSaveFailed(false);
+            }}
+          />
+          <span className="meta mp-field-count">
+            {value.length}/{BIO_MAX}
+          </span>
+        </label>
+        <div className="mp-field-actions">
+          <Button type="submit" size="lg" disabled={unchanged || saving}>
+            저장
+          </Button>
+        </div>
+      </form>
+      {savedMsg && <span className="mp-field-hint">{trimmed ? '자기소개를 저장했어요.' : '자기소개를 지웠어요.'}</span>}
+      {saveFailed && <span className="mp-field-hint is-error">자기소개를 저장하지 못했어요. 다시 시도해 주세요.</span>}
     </section>
   );
 }

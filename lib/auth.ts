@@ -9,6 +9,8 @@ import { createClient } from '@/lib/supabase/client';
  * The session is kept in localStorage (see `lib/supabase/client.ts`).
  * The profile row is created 1:1 by the `on_auth_user_created` trigger on
  * first sign-in, with `name` set from the auth user's Display Name (PRD #1).
+ * The bio has no `profile` column, so it lives in the auth user's
+ * `user_metadata.bio` — only the signed-in user can read or change it.
  */
 
 export type User = {
@@ -16,6 +18,8 @@ export type User = {
   nickname: string;
   /** Google profile picture from the auth session; null → initials. */
   avatarUrl: string | null;
+  /** Self-introduction from `user_metadata.bio`; '' when not set. */
+  bio: string;
 };
 
 type AuthSnapshot = { ready: boolean; user: User | null };
@@ -57,6 +61,7 @@ async function loadUser(session: Session | null) {
       email: session.user.email ?? '',
       nickname: data?.name ?? meta.full_name ?? meta.name ?? '',
       avatarUrl: meta.avatar_url ?? meta.picture ?? null,
+      bio: typeof meta.bio === 'string' ? meta.bio : '',
     },
   });
 }
@@ -120,5 +125,14 @@ export const authActions = {
       .single();
     if (error) throw error;
     emit({ ready: true, user: { ...snapshot.user, nickname: data.name } });
+  },
+
+  /** Throws when the update fails — callers show the error state. '' clears the bio. */
+  async updateBio(bio: string) {
+    if (!snapshot.user) return;
+    const { data, error } = await client().auth.updateUser({ data: { bio } });
+    if (error) throw error;
+    const saved = data.user.user_metadata.bio;
+    emit({ ready: true, user: { ...snapshot.user, bio: typeof saved === 'string' ? saved : '' } });
   },
 };

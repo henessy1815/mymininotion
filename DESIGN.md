@@ -553,7 +553,7 @@ import { UserAvatar } from '@/components/shell';
 | `.command-box` / `.command-menu` / `.command-item` | `/page` 명령 입력창과 명령 제안 드롭다운 |
 | `.page-row` / `.page-link` / `.page-row-delete` | 업무 목록 행 (hover 시 삭제 버튼 노출) |
 | `.alert` | 연빨강 배경 오류 박스 (로그인·이미지 업로드) |
-| `.mp-field` + `.mp-field-hint` | 테두리 입력 필드 + 글자 수 `.meta` + 힌트/오류 |
+| `.mp-field` + `.mp-field-hint` | 테두리 입력 필드 + 글자 수 `.meta` + 힌트/오류. 여러 줄은 `.is-multiline`(세로 쌓기, 높이 auto) + `.mp-field-count`(오른쪽 아래 글자 수), 제출 버튼은 `.mp-field-actions`(오른쪽 정렬) |
 | `.save-state` | 저장 중/저장됨/저장 실패 인디케이터 |
 | `.page-cover` | 글 상세 상단 커버. `data-state="loading\|loaded\|failed"`에 따라 `Skeleton` → 사진(`object-fit: cover`) → `--bg-accent-soft` 단색. 높이 고정이라 상태가 바뀌어도 레이아웃 이동 없음 |
 | `.editor-count` | 에디터 본문 아래 글자 수 (`.meta`와 함께 사용, `margin-top: var(--space-12)`, `tabular-nums`) |
@@ -603,13 +603,14 @@ import { UserAvatar } from '@/components/shell';
 
 ### 8.4 My page — 1g (`app/(app)/mypage/page.tsx`)
 
-- 헤더: "마이 페이지". 본문 최대폭 600px, `.mp-section` 3개를 1px 구분선으로 분리.
+- 헤더: "마이 페이지". 본문 최대폭 600px, `.mp-section` 4개를 1px 구분선으로 분리.
 - 섹션 머리: `.mp-head-title`(`--type-heading`) + `.mp-head-desc`(`--type-caption`, secondary).
 
 | 섹션 | 구성 |
 | --- | --- |
 | 프로필 이미지 | `UserAvatar` 80만 표시 (Google 프로필 사진, 없으면 이니셜). 변경 기능 없음 — `profile`에 이미지 컬럼이 없다 |
 | 별명 | `.mp-field`(글자 수 `n/20` `.meta`) + primary lg "저장" + 힌트/오류 |
+| 자기소개 | `.mp-field.is-multiline`(4줄 `textarea`, `--type-body`, 오른쪽 아래 `n/200` `.meta`) → 오른쪽 정렬 primary lg "저장" + 힌트/오류. 앞뒤 공백 제거 후 저장, 빈 값 저장 = 삭제. `profile`에 컬럼이 없어 Supabase Auth `user_metadata.bio`에 저장 |
 | 계정 | `.google-mark-lg` + 이메일 + "Google 계정으로 로그인됨" + secondary "로그아웃"(`LogOut`) |
 
 ### 8.5 Mobile — 1h / 1i
@@ -651,7 +652,7 @@ import { UserAvatar } from '@/components/shell';
 | 상태 | 명사형, 마침표 없음 | 저장 중… · 저장됨 · 저장 실패 · 로그인 중… · Google 계정으로 로그인됨 |
 | 확인 질문 | "~할까요?" | 이 글을 삭제할까요? |
 | 빈 상태 제목 | 권유형 "~해 보세요" | 첫 글을 만들어 보세요 |
-| placeholder | 행동 안내 또는 기본값 | /page를 입력하고 Enter를 눌러 새 글 만들기 · 제목 없음 · 내용을 입력하세요 · 글 제목 검색 |
+| placeholder | 행동 안내 또는 기본값 | /page를 입력하고 Enter를 눌러 새 글 만들기 · 제목 없음 · 내용을 입력하세요 · 자기소개를 입력하세요 · 글 제목 검색 |
 | 메타 | 명사구 | 최근 수정순 · {일시} 수정 · {날짜} 생성 |
 | 화면명 | 사이드바 "업무 페이지" / 시트 제목 "업무" / "마이 페이지" | |
 
@@ -667,6 +668,8 @@ import { UserAvatar } from '@/components/shell';
 | 별명 빈 값 | 별명을 입력해 주세요. 공백만으로는 저장할 수 없어요. |
 | 별명 저장 성공 | 별명을 저장했어요. |
 | 별명 저장 실패 | 별명을 저장하지 못했어요. 다시 시도해 주세요. |
+| 자기소개 저장 성공 / 비워서 저장 | 자기소개를 저장했어요. / 자기소개를 지웠어요. |
+| 자기소개 저장 실패 | 자기소개를 저장하지 못했어요. 다시 시도해 주세요. |
 | 글 없음 | 글을 찾을 수 없어요 / 삭제되었거나 접근할 수 없는 글이에요. |
 | 삭제 확인 설명 | ‘{title}’ 글이 삭제됩니다. 삭제한 글은 복구할 수 없습니다. ← 유일한 합니다체 (불일치 참고) |
 
@@ -681,7 +684,7 @@ import { UserAvatar } from '@/components/shell';
 
 - 연도는 표시하지 않는다. 월·일은 0을 채우지 않고, 분만 두 자리로 채운다. 12시간제 + 오전/오후.
 - 새 날짜 표기는 직접 만들지 말고 이 두 함수를 쓴다. 상대 시간("3분 전")은 현재 쓰지 않는다.
-- 숫자: 글자 수 `{n}/{max}`(별명), 글 내용 글자 수 `공백 포함 1,234자 · 공백 제외 1,050자`(grapheme 단위, `lib/text.ts`), 용량 `{n.n}MB`(소수 1자리), 파일 형식은 대문자 `JPG · PNG · WEBP`.
+- 숫자: 글자 수 `{n}/{max}`(별명·자기소개), 글 내용 글자 수 `공백 포함 1,234자 · 공백 제외 1,050자`(grapheme 단위, `lib/text.ts`), 용량 `{n.n}MB`(소수 1자리), 파일 형식은 대문자 `JPG · PNG · WEBP`.
 
 ---
 
@@ -696,7 +699,7 @@ import { UserAvatar } from '@/components/shell';
 | 현재 위치 | `SidebarItem` `aria-current="page"` |
 | 펼침 상태 | `SidebarSection` `aria-expanded` |
 | 랜드마크 | `header.topbar`, `nav.sidebar aria-label="사이드바"`, `main.sheet` |
-| 입력 이름 | 모든 입력에 `aria-label` (명령어 입력, 글 제목 검색, 제목, 내용, 별명) |
+| 입력 이름 | 모든 입력에 `aria-label` (명령어 입력, 글 제목 검색, 제목, 내용, 별명, 자기소개) |
 | 상태 알림 | `SaveState` `role="status"` / 실패 `role="alert"`, `.alert` `role="alert"` |
 | 보조 설명 | 내용 `textarea`의 `aria-describedby` → 글자 수 (라이브 영역 아님, 입력마다 낭독하지 않음) |
 | 장식 이미지 | 글 커버는 `aria-hidden="true"` + `alt=""`, 포커스를 받지 않음 |
@@ -796,7 +799,7 @@ import { UserAvatar } from '@/components/shell';
 | `lib/format.ts` | 날짜·제목·글자 수 표기 |
 | `lib/text.ts` | 글자 수 계산 (`countCharacters`, grapheme 단위) |
 | `lib/store.ts` | 글 데이터 레이어 (localStorage) |
-| `lib/auth.ts` | 로그인 사용자 (`useAuth`, `authActions`) — Supabase Auth(Google) + `profile` 테이블(`name`) |
+| `lib/auth.ts` | 로그인 사용자 (`useAuth`, `authActions`) — Supabase Auth(Google) + `profile` 테이블(`name`) + `user_metadata.bio`(자기소개) |
 | `lib/supabase/client.ts` | 브라우저 전용 Supabase 클라이언트 — 세션을 localStorage에 저장 (PKCE) |
 | `app/auth/callback/page.tsx` | OAuth 콜백: 브라우저에서 code 교환 (`?error=cancelled` · `failed`) |
 
