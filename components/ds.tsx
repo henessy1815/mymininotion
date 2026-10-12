@@ -120,7 +120,13 @@ export function SidebarItem({
   selected?: boolean;
 }) {
   return (
-    <Link href={href} className={`sb-item${selected ? ' is-selected' : ''}`} aria-current={selected ? 'page' : undefined}>
+    <Link
+      href={href}
+      title={label}
+      aria-label={label}
+      className={`sb-item${selected ? ' is-selected' : ''}`}
+      aria-current={selected ? 'page' : undefined}
+    >
       <span className="sb-item-icon">
         <Icon size={18} />
       </span>
