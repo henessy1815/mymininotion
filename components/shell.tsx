@@ -3,14 +3,15 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { CircleAlert, CircleUserRound, FileText, LayoutList, Search } from 'lucide-react';
-import { Avatar, Button, Kbd, SearchPill, SidebarItem, SidebarSection } from './ds';
+import { CircleAlert, CircleUserRound, FileText, LayoutList, Moon, Search } from 'lucide-react';
+import { Avatar, Button, Kbd, SearchPill, SidebarItem, SidebarSection, SidebarSwitch } from './ds';
 import { useAuth, type User } from '@/lib/auth';
 import { useStore } from '@/lib/store';
+import { setTheme, useTheme } from '@/lib/theme';
 import { displayTitle, formatDateTime } from '@/lib/format';
 
 export function UserAvatar({ user, size }: { user: User; size: number }) {
-  return <Avatar size={size} src={user.avatarUrl} initials={user.nickname.slice(0, 1)} bg="var(--purple-500)" />;
+  return <Avatar size={size} src={user.avatarUrl} initials={user.nickname.slice(0, 1)} bg="var(--accent)" />;
 }
 
 /** Redirects to /login when signed out (PRD #2), then renders the shell. */
@@ -62,13 +63,29 @@ export function AppShell({ children }: { children: ReactNode }) {
               ))
             )}
           </SidebarSection>
-          <div className="sidebar-hint">
-            <Kbd>/page</Kbd>로 새 글 만들기
+          <div className="sidebar-foot">
+            <ThemeToggle />
+            <div className="sidebar-hint">
+              <Kbd>/page</Kbd>로 새 글 만들기
+            </div>
           </div>
         </nav>
         <main className="sheet">{children}</main>
       </div>
     </div>
+  );
+}
+
+/** Dark mode switch at the bottom of the sidebar. */
+function ThemeToggle() {
+  const theme = useTheme();
+  return (
+    <SidebarSwitch
+      icon={Moon}
+      label="다크 모드"
+      checked={theme === 'dark'}
+      onChange={(on) => setTheme(on ? 'dark' : 'light')}
+    />
   );
 }
 

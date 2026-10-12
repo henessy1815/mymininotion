@@ -50,6 +50,14 @@
 /* mini notion — skeleton loading */
 --bg-skeleton:var(--gray-100);
 --bg-skeleton-shine:rgba(255,255,255,.6);
+/* mini notion — dark mode: semantic roles that used to reference primitives directly */
+--bg-surface-hover:var(--gray-25);
+--bg-inverse-hover:#000000;
+--bg-danger:var(--red-500);
+--bg-danger-hover:#D23A51;
+--bg-danger-soft:var(--red-100);
+--bg-overlay:rgba(0,0,0,.28);
+--bg-switch-track:var(--gray-400);
 
 --text-primary:var(--gray-900);
 --text-secondary:var(--gray-600);
@@ -59,14 +67,60 @@
 --text-inverse-muted:#A9A9AD;
 --text-danger:var(--red-500);
 --text-accent:var(--purple-600);
+--text-on-color:var(--gray-0); /* text on colored fills (avatar, danger) — stays white in dark mode */
 
 --border-subtle:var(--gray-150);
 --border-default:var(--gray-200);
 --border-strong:var(--gray-900);
+--border-emphasis:var(--gray-300);
 
 --accent:var(--purple-500);
 --status-online:var(--green-500);
 --status-alert:var(--red-500);
+
+color-scheme:light;
+}
+
+/* mini notion — dark theme. <html data-theme="dark">, set by the inline script
+   in app/layout.tsx and lib/theme.ts. Only semantic tokens are overridden. */
+:root[data-theme="dark"]{
+--bg-app:#141414;
+--bg-sidebar:#1B1B1B;
+--bg-surface:#202020;
+--bg-surface-hover:#272727;
+--bg-hover:rgba(255,255,255,.06);
+--bg-pressed:rgba(255,255,255,.1);
+--bg-selected:#2E2E2E;
+--bg-inverse:#EDEDED;
+--bg-inverse-hover:#FFFFFF;
+--bg-accent-soft:#2A2640;
+--bg-skeleton:#2A2A2A;
+--bg-skeleton-shine:rgba(255,255,255,.06);
+--bg-danger-hover:#EE5C71;
+--bg-danger-soft:#3B1F25;
+--bg-overlay:rgba(0,0,0,.6);
+--bg-switch-track:#5A5A5A;
+
+--text-primary:#EDEDED;
+--text-secondary:#ABABAB;
+--text-tertiary:#8F8F8F;
+--text-placeholder:#666666;
+--text-inverse:var(--gray-900);
+--text-danger:#FF6B80;
+--text-accent:var(--purple-300);
+
+--border-subtle:#2E2E2E;
+--border-default:#3D3D3D;
+--border-strong:#EDEDED;
+--border-emphasis:#555555;
+
+--shadow-xs:0 1px 2px rgba(0,0,0,.4);
+--shadow-sm:0 1px 3px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.04);
+--shadow-md:0 4px 16px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);
+--shadow-lg:0 12px 32px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08);
+--shadow-panel:0 0 0 1px rgba(255,255,255,.06);
+
+color-scheme:dark;
 }
 
 /* typography.css */

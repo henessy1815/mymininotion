@@ -14,7 +14,7 @@ export function Avatar({
   size = 24,
   src,
   initials,
-  bg = 'var(--gray-100)',
+  bg = 'var(--bg-selected)',
 }: {
   size?: number;
   src?: string | null;
@@ -34,7 +34,7 @@ export function Avatar({
         justifyContent: 'center',
         overflow: 'hidden',
         lineHeight: 1,
-        color: 'var(--text-inverse)',
+        color: 'var(--text-on-color)',
         fontWeight: 600,
         fontSize: Math.round(size * 0.4),
       }}
@@ -146,5 +146,28 @@ export function SidebarSection({ title, children }: { title: string; children: R
       </div>
       {open && children}
     </div>
+  );
+}
+
+/** Sidebar row with an on/off switch (`role="switch"`). Same height and hover as SidebarItem. */
+export function SidebarSwitch({
+  icon: Icon,
+  label,
+  checked,
+  onChange,
+}: {
+  icon: LucideIcon;
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <button type="button" role="switch" aria-checked={checked} className="sb-item sb-switch" onClick={() => onChange(!checked)}>
+      <span className="sb-item-icon">
+        <Icon size={18} />
+      </span>
+      <span className="sb-item-label">{label}</span>
+      <span className="switch" aria-hidden="true" />
+    </button>
   );
 }
