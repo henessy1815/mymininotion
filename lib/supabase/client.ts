@@ -13,3 +13,10 @@ export function createClient() {
     },
   });
 }
+
+let shared: ReturnType<typeof createClient> | null = null;
+
+/** One client for the whole app (`lib/auth.ts`, `lib/store.ts`) so the session is never refreshed twice. */
+export function getClient() {
+  return (shared ??= createClient());
+}

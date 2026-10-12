@@ -7,7 +7,7 @@ import { Check, ChevronLeft, CircleAlert, FileX, LoaderCircle, Trash2 } from 'lu
 import { Button, IconButton, Skeleton } from '@/components/ds';
 import { DeleteDialog } from '@/components/shell';
 import { actions, usePage, type Page } from '@/lib/store';
-import { displayTitle, formatCharCount, formatDate, formatDateTime } from '@/lib/format';
+import { displayTitle, formatCharCount, formatDateTime } from '@/lib/format';
 import { countCharacters } from '@/lib/text';
 
 const AUTOSAVE_DELAY = 1000;
@@ -34,29 +34,43 @@ function Editor({ page, onDeleted }: { page: Page; onDeleted: () => void }) {
   const [content, setContent] = useState(page.content);
   const [status, setStatus] = useState<SaveStatus>('saved');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteFailed, setDeleteFailed] = useState(false);
 
   const draft = useRef({ title: page.title, content: page.content });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Saves run one after another so an older request can never overwrite a newer one.
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
+  // Bumped on every edit/save; only the latest one may report its status.
+  const saveSeq = useRef(0);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const countId = useId();
 
-  const save = () => {
+  const persist = (id: string, values: typeof draft.current) => {
+    const request = queue.current.then(() => actions.updatePage(id, values));
+    queue.current = request.catch(() => {});
+    return request;
+  };
+
+  const save = async () => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
+    const seq = ++saveSeq.current;
     setStatus('saving');
     try {
-      actions.updatePage(page.id, draft.current);
-      setStatus('saved');
+      await persist(page.id, draft.current);
+      if (seq === saveSeq.current) setStatus('saved');
     } catch {
-      setStatus('failed');
+      if (seq === saveSeq.current) setStatus('failed');
     }
   };
 
   const edit = (patch: Partial<typeof draft.current>) => {
     draft.current = { ...draft.current, ...patch };
+    saveSeq.current++;
     setStatus('saving');
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(save, AUTOSAVE_DELAY);
+    timer.current = setTimeout(() => void save(), AUTOSAVE_DELAY);
   };
 
   // Flush a pending save when leaving the page.
@@ -65,20 +79,30 @@ function Editor({ page, onDeleted }: { page: Page; onDeleted: () => void }) {
     return () => {
       if (!timer.current) return;
       clearTimeout(timer.current);
-      try {
-        actions.updatePage(id, draft.current);
-      } catch {
-        // nothing to show once unmounted
-      }
+      const values = draft.current;
+      // nothing to show once unmounted
+      queue.current.then(() => actions.updatePage(id, values)).catch(() => {});
     };
   }, [page.id]);
 
-  const remove = () => {
+  const remove = async () => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
-    onDeleted();
-    actions.deletePage(page.id);
-    router.replace('/');
+    setDeleting(true);
+    setDeleteFailed(false);
+    try {
+      await actions.deletePage(page.id);
+      onDeleted();
+      router.replace('/');
+    } catch {
+      setDeleteFailed(true);
+      setDeleting(false);
+    }
+  };
+
+  const closeDelete = () => {
+    setConfirmDelete(false);
+    setDeleteFailed(false);
   };
 
   return (
@@ -96,7 +120,7 @@ function Editor({ page, onDeleted }: { page: Page; onDeleted: () => void }) {
         <span className="crumb-sep d-only">/</span>
         <span className={`crumb-current d-only${title.trim() ? '' : ' is-untitled'}`}>{displayTitle(title)}</span>
         <span className="spacer" />
-        <SaveState status={status} onRetry={save} />
+        <SaveState status={status} onRetry={() => void save()} />
         <span className="divider-v d-only" />
         <IconButton icon={Trash2} label="삭제" size={32} iconSize={17} active={confirmDelete} className="d-only" onClick={() => setConfirmDelete(true)} />
         <IconButton icon={Trash2} label="삭제" size={44} iconSize={19} className="m-only" onClick={() => setConfirmDelete(true)} />
@@ -124,7 +148,7 @@ function Editor({ page, onDeleted }: { page: Page; onDeleted: () => void }) {
               }}
             />
             <div className="meta editor-meta">
-              {formatDateTime(page.updatedAt)} 수정<span className="d-only" style={{ display: 'inline' }}> · {formatDate(page.createdAt)} 생성</span>
+              {formatDateTime(page.createdAt)} 작성
             </div>
             <div className="editor-divider" />
             <textarea
@@ -145,7 +169,13 @@ function Editor({ page, onDeleted }: { page: Page; onDeleted: () => void }) {
       </div>
 
       {confirmDelete && (
-        <DeleteDialog title={displayTitle(title)} onCancel={() => setConfirmDelete(false)} onConfirm={remove} />
+        <DeleteDialog
+          title={displayTitle(title)}
+          pending={deleting}
+          error={deleteFailed ? '글을 삭제하지 못했어요. 다시 시도해 주세요.' : undefined}
+          onCancel={closeDelete}
+          onConfirm={() => void remove()}
+        />
       )}
     </>
   );

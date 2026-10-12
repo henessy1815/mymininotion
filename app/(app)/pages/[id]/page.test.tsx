@@ -3,28 +3,26 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { nav } from '@/test/navigation';
 import { loadStore } from '@/test/store';
+import { db, pageRow } from '@/test/supabase';
 
 vi.mock('next/navigation', () => import('@/test/navigation'));
+vi.mock('@/lib/supabase/client', () => import('@/test/supabase'));
 
 async function renderPage({ content }: { content: string }) {
-  localStorage.setItem(
-    'mini-notion:v1',
-    JSON.stringify({ pages: [{ id: 'p1', title: '', content, createdAt: 1, updatedAt: 1 }] }),
-  );
+  db.rows.push(pageRow({ id: 'p1', content }));
   await loadStore();
   nav.params = { id: 'p1' };
   const { default: PageDetail } = await import('./page');
   render(<PageDetail />);
-}
-
-/** jsdom's real quota is 5,000,000 code units across keys and values. Leave just a few free. */
-function fillStorageAlmostFull() {
-  let used = 0;
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)!;
-    used += key.length + localStorage.getItem(key)!.length;
+  // The page list arrives from Supabase asynchronously. Under fake timers, flush it
+  // directly: findBy* waits on (faked) setTimeout, letting real time drift into the
+  // cover's 10s timeout.
+  if (vi.isFakeTimers()) {
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    screen.getByRole('textbox', { name: '내용' });
+  } else {
+    await screen.findByRole('textbox', { name: '내용' });
   }
-  localStorage.setItem('filler', 'x'.repeat(5_000_000 - used - 'filler'.length - 4));
 }
 
 const contentBox = () => screen.getByRole('textbox', { name: '내용' });
@@ -73,12 +71,12 @@ describe('글 상세 — 내용 글자 수', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     await renderPage({ content: '' });
-    fillStorageAlmostFull();
+    db.fail.update = true;
 
     await user.type(contentBox(), '안녕');
     await act(() => vi.advanceTimersByTimeAsync(1000));
 
-    expect(screen.getByRole('alert')).toHaveTextContent('저장 실패');
+    expect(await screen.findByRole('alert')).toHaveTextContent('저장 실패');
     expect(charCount()).toHaveTextContent(/^공백 포함 2자/);
   });
 

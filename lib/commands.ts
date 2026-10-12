@@ -8,7 +8,9 @@ export type Command = {
   name: `/${string}`;
   description: string;
   icon: LucideIcon;
-  run: (ctx: CommandContext) => void;
+  /** Shown under the input when `run` throws (UX writing: what happened + what to do). */
+  failMessage: string;
+  run: (ctx: CommandContext) => void | Promise<void>;
 };
 
 /**
@@ -20,7 +22,8 @@ export const COMMANDS: Command[] = [
     name: '/page',
     description: '새 글 만들기',
     icon: FilePlus,
-    run: ({ navigate }) => navigate(`/pages/${actions.createPage().id}`),
+    failMessage: '새 글을 만들지 못했어요. 다시 시도해 주세요.',
+    run: async ({ navigate }) => navigate(`/pages/${(await actions.createPage()).id}`),
   },
 ];
 

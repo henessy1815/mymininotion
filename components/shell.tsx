@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { CircleUserRound, FileText, LayoutList, Search } from 'lucide-react';
+import { CircleAlert, CircleUserRound, FileText, LayoutList, Search } from 'lucide-react';
 import { Avatar, Button, Kbd, SearchPill, SidebarItem, SidebarSection } from './ds';
 import { useAuth, type User } from '@/lib/auth';
 import { useStore } from '@/lib/store';
@@ -151,7 +151,7 @@ export function SearchBox({ expanded = false, onClose }: { expanded?: boolean; o
               >
                 <FileText size={16} color="var(--text-tertiary)" />
                 <span className="search-result-title">{displayTitle(p.title)}</span>
-                <span className="meta">{formatDateTime(p.updatedAt)}</span>
+                <span className="meta">{formatDateTime(p.createdAt)}</span>
               </Link>
             ))
           )}
@@ -161,13 +161,17 @@ export function SearchBox({ expanded = false, onClose }: { expanded?: boolean; o
   );
 }
 
-/** 1f — delete confirmation. */
+/** 1f — delete confirmation. `pending` disables "삭제" while the request runs; `error` keeps the dialog open with the reason. */
 export function DeleteDialog({
   title,
+  pending = false,
+  error,
   onCancel,
   onConfirm,
 }: {
   title: string;
+  pending?: boolean;
+  error?: string;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
@@ -184,11 +188,19 @@ export function DeleteDialog({
           이 글을 삭제할까요?
         </h2>
         <p className="dialog-desc">‘{title}’ 글이 삭제됩니다. 삭제한 글은 복구할 수 없습니다.</p>
+        {error && (
+          <div className="alert dialog-alert" role="alert">
+            <span className="alert-icon">
+              <CircleAlert size={16} />
+            </span>
+            <span>{error}</span>
+          </div>
+        )}
         <div className="dialog-actions">
           <Button variant="secondary" onClick={onCancel}>
             취소
           </Button>
-          <Button variant="danger" onClick={onConfirm} autoFocus>
+          <Button variant="danger" onClick={onConfirm} disabled={pending} autoFocus>
             삭제
           </Button>
         </div>
