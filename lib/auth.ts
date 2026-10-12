@@ -9,8 +9,7 @@ import { createClient } from '@/lib/supabase/client';
  * The session is kept in localStorage (see `lib/supabase/client.ts`).
  * The profile row is created 1:1 by the `on_auth_user_created` trigger on
  * first sign-in, with `name` set from the auth user's Display Name (PRD #1).
- * The bio has no `profile` column, so it lives in the auth user's
- * `user_metadata.bio` — only the signed-in user can read or change it.
+ * The self-introduction is `profile.introduction`.
  */
 
 export type User = {
@@ -18,8 +17,8 @@ export type User = {
   nickname: string;
   /** Google profile picture from the auth session; null → initials. */
   avatarUrl: string | null;
-  /** Self-introduction from `user_metadata.bio`; '' when not set. */
-  bio: string;
+  /** `profile.introduction`; '' when not set. */
+  introduction: string;
 };
 
 type AuthSnapshot = { ready: boolean; user: User | null };
@@ -51,7 +50,7 @@ async function loadUser(session: Session | null) {
   userId = session.user.id;
   const { data } = await client()
     .from('profile')
-    .select('name')
+    .select('name, introduction')
     .eq('user_id', session.user.id)
     .maybeSingle();
   const meta = session.user.user_metadata;
@@ -61,7 +60,7 @@ async function loadUser(session: Session | null) {
       email: session.user.email ?? '',
       nickname: data?.name ?? meta.full_name ?? meta.name ?? '',
       avatarUrl: meta.avatar_url ?? meta.picture ?? null,
-      bio: typeof meta.bio === 'string' ? meta.bio : '',
+      introduction: data?.introduction ?? '',
     },
   });
 }
@@ -127,12 +126,16 @@ export const authActions = {
     emit({ ready: true, user: { ...snapshot.user, nickname: data.name } });
   },
 
-  /** Throws when the update fails — callers show the error state. '' clears the bio. */
-  async updateBio(bio: string) {
-    if (!snapshot.user) return;
-    const { data, error } = await client().auth.updateUser({ data: { bio } });
+  /** Throws when the update fails — callers show the error state. '' clears it. */
+  async updateIntroduction(introduction: string) {
+    if (!snapshot.user || !userId) return;
+    const { data, error } = await client()
+      .from('profile')
+      .update({ introduction })
+      .eq('user_id', userId)
+      .select('introduction')
+      .single();
     if (error) throw error;
-    const saved = data.user.user_metadata.bio;
-    emit({ ready: true, user: { ...snapshot.user, bio: typeof saved === 'string' ? saved : '' } });
+    emit({ ready: true, user: { ...snapshot.user, introduction: data.introduction ?? '' } });
   },
 };

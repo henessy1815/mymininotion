@@ -294,7 +294,7 @@ a.plain:hover { color: inherit; }
 }
 .mp-field textarea::placeholder { color: var(--text-placeholder); }
 .mp-field-count { align-self: flex-end; font-variant-numeric: tabular-nums; }
-.mp-bio-form { display: flex; flex-direction: column; gap: var(--space-8); }
+.mp-multiline-form { display: flex; flex-direction: column; gap: var(--space-8); }
 .mp-field-actions { display: flex; justify-content: flex-end; }
 .mp-field-hint { font: var(--type-caption); color: var(--text-tertiary); }
 .mp-field-hint.is-error { color: var(--text-danger); }

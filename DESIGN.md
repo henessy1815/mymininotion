@@ -610,7 +610,7 @@ import { UserAvatar } from '@/components/shell';
 | --- | --- |
 | 프로필 이미지 | `UserAvatar` 80만 표시 (Google 프로필 사진, 없으면 이니셜). 변경 기능 없음 — `profile`에 이미지 컬럼이 없다 |
 | 별명 | `.mp-field`(글자 수 `n/20` `.meta`) + primary lg "저장" + 힌트/오류 |
-| 자기소개 | `.mp-field.is-multiline`(4줄 `textarea`, `--type-body`, 오른쪽 아래 `n/200` `.meta`) → 오른쪽 정렬 primary lg "저장" + 힌트/오류. 앞뒤 공백 제거 후 저장, 빈 값 저장 = 삭제. `profile`에 컬럼이 없어 Supabase Auth `user_metadata.bio`에 저장 |
+| 자기소개 | `.mp-field.is-multiline`(4줄 `textarea`, `--type-body`, 오른쪽 아래 `n/200` `.meta`) → 오른쪽 정렬 primary lg "저장" + 힌트/오류. 앞뒤 공백 제거 후 저장, 빈 값 저장 = 삭제. `profile.introduction`에 저장 |
 | 계정 | `.google-mark-lg` + 이메일 + "Google 계정으로 로그인됨" + secondary "로그아웃"(`LogOut`) |
 
 ### 8.5 Mobile — 1h / 1i
@@ -799,7 +799,7 @@ import { UserAvatar } from '@/components/shell';
 | `lib/format.ts` | 날짜·제목·글자 수 표기 |
 | `lib/text.ts` | 글자 수 계산 (`countCharacters`, grapheme 단위) |
 | `lib/store.ts` | 글 데이터 레이어 (localStorage) |
-| `lib/auth.ts` | 로그인 사용자 (`useAuth`, `authActions`) — Supabase Auth(Google) + `profile` 테이블(`name`) + `user_metadata.bio`(자기소개) |
+| `lib/auth.ts` | 로그인 사용자 (`useAuth`, `authActions`) — Supabase Auth(Google) + `profile` 테이블(`name`, `introduction`) |
 | `lib/supabase/client.ts` | 브라우저 전용 Supabase 클라이언트 — 세션을 localStorage에 저장 (PKCE) |
 | `app/auth/callback/page.tsx` | OAuth 콜백: 브라우저에서 code 교환 (`?error=cancelled` · `failed`) |
 

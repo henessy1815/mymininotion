@@ -8,7 +8,7 @@ import { UserAvatar } from '@/components/shell';
 import { authActions, useAuth, type User } from '@/lib/auth';
 
 const NICKNAME_MAX = 20;
-const BIO_MAX = 200;
+const INTRODUCTION_MAX = 200;
 
 /** 1g 마이 페이지 */
 export default function MyPage() {
@@ -25,7 +25,7 @@ export default function MyPage() {
           <div className="mypage-inner">
             <AvatarSection user={user} />
             <NicknameSection user={user} />
-            <BioSection user={user} />
+            <IntroductionSection user={user} />
             <AccountSection user={user} />
           </div>
         </div>
@@ -107,13 +107,13 @@ function NicknameSection({ user }: { user: User }) {
   );
 }
 
-function BioSection({ user }: { user: User }) {
-  const [value, setValue] = useState(user.bio);
+function IntroductionSection({ user }: { user: User }) {
+  const [value, setValue] = useState(user.introduction);
   const [savedMsg, setSavedMsg] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const trimmed = value.trim();
-  const unchanged = trimmed === user.bio;
+  const unchanged = trimmed === user.introduction;
 
   return (
     <section className="mp-section">
@@ -122,14 +122,14 @@ function BioSection({ user }: { user: User }) {
         <span className="mp-head-desc">나를 짧게 소개해 보세요. 비워 두고 저장하면 자기소개가 지워져요.</span>
       </div>
       <form
-        className="mp-bio-form"
+        className="mp-multiline-form"
         onSubmit={async (e) => {
           e.preventDefault();
           if (unchanged || saving) return;
           setSaving(true);
           setSaveFailed(false);
           try {
-            await authActions.updateBio(trimmed);
+            await authActions.updateIntroduction(trimmed);
             setValue(trimmed);
             setSavedMsg(true);
           } catch {
@@ -142,7 +142,7 @@ function BioSection({ user }: { user: User }) {
         <label className="mp-field is-multiline">
           <textarea
             value={value}
-            maxLength={BIO_MAX}
+            maxLength={INTRODUCTION_MAX}
             rows={4}
             placeholder="자기소개를 입력하세요"
             aria-label="자기소개"
@@ -153,7 +153,7 @@ function BioSection({ user }: { user: User }) {
             }}
           />
           <span className="meta mp-field-count">
-            {value.length}/{BIO_MAX}
+            {value.length}/{INTRODUCTION_MAX}
           </span>
         </label>
         <div className="mp-field-actions">
