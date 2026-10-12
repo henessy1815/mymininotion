@@ -7,8 +7,8 @@
  */
 
 import Link from 'next/link';
-import { useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
-import { ChevronDown, Search, type LucideIcon } from 'lucide-react';
+import { useState, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react';
+import { ChevronDown, CircleAlert, Search, type LucideIcon } from 'lucide-react';
 
 export function Avatar({
   size = 24,
@@ -52,6 +52,29 @@ export function Avatar({
 /** Loading placeholder with a shimmer sweep. The parent sets its size. */
 export function Skeleton({ className = '' }: { className?: string }) {
   return <span className={['skeleton', className].filter(Boolean).join(' ')} aria-hidden="true" />;
+}
+
+/** Error box (`role="alert"`): icon + message, with an optional action button on the right. Spacing comes from `className`. */
+export function Alert({
+  children,
+  action,
+  className = '',
+  style,
+}: {
+  children: ReactNode;
+  action?: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <div className={['alert', className].filter(Boolean).join(' ')} role="alert" style={style}>
+      <span className="alert-icon">
+        <CircleAlert size={16} />
+      </span>
+      <span className="alert-text">{children}</span>
+      {action}
+    </div>
+  );
 }
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

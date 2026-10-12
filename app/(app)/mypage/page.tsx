@@ -48,14 +48,44 @@ function AvatarSection({ user }: { user: User }) {
   );
 }
 
-function NicknameSection({ user }: { user: User }) {
-  const [value, setValue] = useState(user.nickname);
-  const [savedMsg, setSavedMsg] = useState(false);
-  const [saveFailed, setSaveFailed] = useState(false);
+/** Edit-then-save state for one profile text field; the saved value is trimmed. */
+function useProfileField(saved: string, save: (value: string) => Promise<void>) {
+  const [value, setValue] = useState(saved);
+  const [result, setResult] = useState<'saved' | 'failed' | null>(null);
   const [saving, setSaving] = useState(false);
   const trimmed = value.trim();
-  const invalid = trimmed.length === 0;
-  const unchanged = trimmed === user.nickname;
+  const unchanged = trimmed === saved;
+
+  return {
+    value,
+    trimmed,
+    unchanged,
+    saving,
+    result,
+    change(next: string) {
+      setValue(next);
+      setResult(null);
+    },
+    async submit() {
+      if (unchanged || saving) return;
+      setSaving(true);
+      setResult(null);
+      try {
+        await save(trimmed);
+        setValue(trimmed);
+        setResult('saved');
+      } catch {
+        setResult('failed');
+      } finally {
+        setSaving(false);
+      }
+    },
+  };
+}
+
+function NicknameSection({ user }: { user: User }) {
+  const field = useProfileField(user.nickname, authActions.updateNickname);
+  const invalid = field.trimmed.length === 0;
 
   return (
     <section className="mp-section">
@@ -65,55 +95,30 @@ function NicknameSection({ user }: { user: User }) {
       </div>
       <form
         className="mp-field-row"
-        onSubmit={async (e) => {
+        onSubmit={(e) => {
           e.preventDefault();
-          if (invalid || unchanged || saving) return;
-          setSaving(true);
-          setSaveFailed(false);
-          try {
-            await authActions.updateNickname(trimmed);
-            setValue(trimmed);
-            setSavedMsg(true);
-          } catch {
-            setSaveFailed(true);
-          } finally {
-            setSaving(false);
-          }
+          if (!invalid) void field.submit();
         }}
       >
         <label className="mp-field">
-          <input
-            value={value}
-            maxLength={NICKNAME_MAX}
-            aria-label="별명"
-            onChange={(e) => {
-              setValue(e.target.value);
-              setSavedMsg(false);
-              setSaveFailed(false);
-            }}
-          />
+          <input value={field.value} maxLength={NICKNAME_MAX} aria-label="별명" onChange={(e) => field.change(e.target.value)} />
           <span className="meta">
-            {value.length}/{NICKNAME_MAX}
+            {field.value.length}/{NICKNAME_MAX}
           </span>
         </label>
-        <Button type="submit" size="lg" disabled={invalid || unchanged || saving}>
+        <Button type="submit" size="lg" disabled={invalid || field.unchanged || field.saving}>
           저장
         </Button>
       </form>
       {invalid && <span className="mp-field-hint is-error">별명을 입력해 주세요. 공백만으로는 저장할 수 없어요.</span>}
-      {savedMsg && !invalid && <span className="mp-field-hint">별명을 저장했어요.</span>}
-      {saveFailed && <span className="mp-field-hint is-error">별명을 저장하지 못했어요. 다시 시도해 주세요.</span>}
+      {field.result === 'saved' && !invalid && <span className="mp-field-hint">별명을 저장했어요.</span>}
+      {field.result === 'failed' && <span className="mp-field-hint is-error">별명을 저장하지 못했어요. 다시 시도해 주세요.</span>}
     </section>
   );
 }
 
 function IntroductionSection({ user }: { user: User }) {
-  const [value, setValue] = useState(user.introduction);
-  const [savedMsg, setSavedMsg] = useState(false);
-  const [saveFailed, setSaveFailed] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const trimmed = value.trim();
-  const unchanged = trimmed === user.introduction;
+  const field = useProfileField(user.introduction, authActions.updateIntroduction);
 
   return (
     <section className="mp-section">
@@ -123,47 +128,34 @@ function IntroductionSection({ user }: { user: User }) {
       </div>
       <form
         className="mp-multiline-form"
-        onSubmit={async (e) => {
+        onSubmit={(e) => {
           e.preventDefault();
-          if (unchanged || saving) return;
-          setSaving(true);
-          setSaveFailed(false);
-          try {
-            await authActions.updateIntroduction(trimmed);
-            setValue(trimmed);
-            setSavedMsg(true);
-          } catch {
-            setSaveFailed(true);
-          } finally {
-            setSaving(false);
-          }
+          void field.submit();
         }}
       >
         <label className="mp-field is-multiline">
           <textarea
-            value={value}
+            value={field.value}
             maxLength={INTRODUCTION_MAX}
             rows={4}
             placeholder="자기소개를 입력하세요"
             aria-label="자기소개"
-            onChange={(e) => {
-              setValue(e.target.value);
-              setSavedMsg(false);
-              setSaveFailed(false);
-            }}
+            onChange={(e) => field.change(e.target.value)}
           />
           <span className="meta mp-field-count">
-            {value.length}/{INTRODUCTION_MAX}
+            {field.value.length}/{INTRODUCTION_MAX}
           </span>
         </label>
         <div className="mp-field-actions">
-          <Button type="submit" size="lg" disabled={unchanged || saving}>
+          <Button type="submit" size="lg" disabled={field.unchanged || field.saving}>
             저장
           </Button>
         </div>
       </form>
-      {savedMsg && <span className="mp-field-hint">{trimmed ? '자기소개를 저장했어요.' : '자기소개를 지웠어요.'}</span>}
-      {saveFailed && <span className="mp-field-hint is-error">자기소개를 저장하지 못했어요. 다시 시도해 주세요.</span>}
+      {field.result === 'saved' && (
+        <span className="mp-field-hint">{field.trimmed ? '자기소개를 저장했어요.' : '자기소개를 지웠어요.'}</span>
+      )}
+      {field.result === 'failed' && <span className="mp-field-hint is-error">자기소개를 저장하지 못했어요. 다시 시도해 주세요.</span>}
     </section>
   );
 }

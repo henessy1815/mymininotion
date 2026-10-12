@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { CircleAlert, CircleUserRound, FileText, LayoutList, Moon, PanelLeftClose, PanelLeftOpen, Search } from 'lucide-react';
-import { Avatar, Button, IconButton, Kbd, SearchPill, SidebarItem, SidebarSection, SidebarSwitch } from './ds';
+import { CircleUserRound, FileText, LayoutList, Moon, PanelLeftClose, PanelLeftOpen, Search } from 'lucide-react';
+import { Alert, Avatar, Button, IconButton, Kbd, SearchPill, SidebarItem, SidebarSection, SidebarSwitch } from './ds';
 import { useAuth, type User } from '@/lib/auth';
 import { useStore } from '@/lib/store';
 import { setTheme, useTheme } from '@/lib/theme';
@@ -208,20 +208,34 @@ export function SearchBox({ expanded = false, onClose }: { expanded?: boolean; o
   );
 }
 
-/** 1f — delete confirmation. `pending` disables "삭제" while the request runs; `error` keeps the dialog open with the reason. */
+/**
+ * 1f — delete confirmation. "삭제" is disabled while `onConfirm` runs; if it
+ * throws, the dialog stays open with the failure message so "삭제" can retry.
+ * On success the caller closes (unmounts) the dialog.
+ */
 export function DeleteDialog({
   title,
-  pending = false,
-  error,
   onCancel,
   onConfirm,
 }: {
   title: string;
-  pending?: boolean;
-  error?: string;
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void>;
 }) {
+  const [pending, setPending] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const confirm = async () => {
+    setPending(true);
+    setFailed(false);
+    try {
+      await onConfirm();
+    } catch {
+      setFailed(true);
+      setPending(false);
+    }
+  };
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onCancel();
     window.addEventListener('keydown', onKey);
@@ -235,19 +249,12 @@ export function DeleteDialog({
           이 글을 삭제할까요?
         </h2>
         <p className="dialog-desc">‘{title}’ 글이 삭제됩니다. 삭제한 글은 복구할 수 없습니다.</p>
-        {error && (
-          <div className="alert dialog-alert" role="alert">
-            <span className="alert-icon">
-              <CircleAlert size={16} />
-            </span>
-            <span>{error}</span>
-          </div>
-        )}
+        {failed && <Alert className="dialog-alert">글을 삭제하지 못했어요. 다시 시도해 주세요.</Alert>}
         <div className="dialog-actions">
           <Button variant="secondary" onClick={onCancel}>
             취소
           </Button>
-          <Button variant="danger" onClick={onConfirm} disabled={pending} autoFocus>
+          <Button variant="danger" onClick={() => void confirm()} disabled={pending} autoFocus>
             삭제
           </Button>
         </div>

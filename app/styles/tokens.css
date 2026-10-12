@@ -81,8 +81,8 @@
 color-scheme:light;
 }
 
-/* mini notion — dark theme. <html data-theme="dark">, set by the inline script
-   in app/layout.tsx and lib/theme.ts. Only semantic tokens are overridden. */
+/* mini notion — dark theme. <html data-theme="dark">, set by the pre-paint script
+   in lib/theme-script.ts and lib/theme.ts. Only semantic tokens are overridden. */
 :root[data-theme="dark"]{
 --bg-app:#141414;
 --bg-sidebar:#1B1B1B;

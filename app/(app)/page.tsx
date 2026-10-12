@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { CircleAlert, File, FileText, Search, SquarePen, Trash2 } from 'lucide-react';
-import { Button, IconButton, Kbd } from '@/components/ds';
+import { File, FileText, Search, SquarePen, Trash2 } from 'lucide-react';
+import { Alert, Button, IconButton, Kbd } from '@/components/ds';
 import { DeleteDialog, SearchBox, UserAvatar } from '@/components/shell';
 import { useAuth } from '@/lib/auth';
 import { matchCommands } from '@/lib/commands';
@@ -17,13 +17,6 @@ export default function WorkspacePage() {
   const { ready, failed, pages } = useStore();
   const [searching, setSearching] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Page | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteFailed, setDeleteFailed] = useState(false);
-
-  const closeDelete = () => {
-    setPendingDelete(null);
-    setDeleteFailed(false);
-  };
 
   return (
     <>
@@ -52,15 +45,16 @@ export default function WorkspacePage() {
             <CommandInput />
 
             {!ready ? null : failed ? (
-              <div className="alert list-alert" role="alert">
-                <span className="alert-icon">
-                  <CircleAlert size={16} />
-                </span>
-                <span className="alert-text">글 목록을 불러오지 못했어요. 다시 시도해 주세요.</span>
-                <Button variant="secondary" size="sm" onClick={() => void actions.reload()}>
-                  다시 시도
-                </Button>
-              </div>
+              <Alert
+                className="list-alert"
+                action={
+                  <Button variant="secondary" size="sm" onClick={() => void actions.reload()}>
+                    다시 시도
+                  </Button>
+                }
+              >
+                글 목록을 불러오지 못했어요. 다시 시도해 주세요.
+              </Alert>
             ) : pages.length === 0 ? (
               <div className="empty">
                 <div className="empty-illust">
@@ -103,20 +97,10 @@ export default function WorkspacePage() {
       {pendingDelete && (
         <DeleteDialog
           title={displayTitle(pendingDelete.title)}
-          pending={deleting}
-          error={deleteFailed ? '글을 삭제하지 못했어요. 다시 시도해 주세요.' : undefined}
-          onCancel={closeDelete}
+          onCancel={() => setPendingDelete(null)}
           onConfirm={async () => {
-            setDeleting(true);
-            setDeleteFailed(false);
-            try {
-              await actions.deletePage(pendingDelete.id);
-              closeDelete();
-            } catch {
-              setDeleteFailed(true);
-            } finally {
-              setDeleting(false);
-            }
+            await actions.deletePage(pendingDelete.id);
+            setPendingDelete(null);
           }}
         />
       )}

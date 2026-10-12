@@ -1,9 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { loadStore } from '@/test/store';
 import { db, pageRow, SIGNED_IN_USER } from '@/test/supabase';
 
-vi.mock('@/lib/supabase/client', () => import('@/test/supabase'));
 
 async function renderStore() {
   const store = await loadStore();

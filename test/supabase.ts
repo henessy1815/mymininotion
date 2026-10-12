@@ -1,24 +1,33 @@
 /**
  * In-memory double for `@/lib/supabase/client`, covering only the query
- * shapes `lib/store.ts` uses on the `page` table. Like Supabase with RLS,
- * every query only sees the signed-in user's rows.
+ * shapes `lib/store.ts` uses on the `page` table and `lib/auth.ts` uses on
+ * the `profile` table. Like Supabase with RLS, every query only sees the
+ * signed-in user's rows. test/setup.ts registers it for every test file.
  *
  * Usage in a test file:
- *   vi.mock('@/lib/supabase/client', () => import('@/test/supabase'));
  *   import { db } from '@/test/supabase';
  *   db.rows.push(pageRow({ id: 'p1' }));
+ *   db.profile.introduction = '소개';
  *   db.fail.update = true; // next updates resolve with an error
  */
 
 export type PageRow = { id: string; created_at: string; title: string | null; content: string | null; user_id: string };
 type Op = 'select' | 'insert' | 'update' | 'delete';
 
-type DbState = { userId: string | null; rows: PageRow[]; fail: Record<Op, boolean> };
+/** The signed-in user's `profile` row (the double has only that one). */
+export type ProfileRow = { name: string | null; introduction: string | null };
+
+type DbState = { userId: string | null; rows: PageRow[]; profile: ProfileRow; fail: Record<Op, boolean> };
 
 export const SIGNED_IN_USER = 'user-1';
 
 function initialState(): DbState {
-  return { userId: SIGNED_IN_USER, rows: [], fail: { select: false, insert: false, update: false, delete: false } };
+  return {
+    userId: SIGNED_IN_USER,
+    rows: [],
+    profile: { name: '고양이', introduction: null },
+    fail: { select: false, insert: false, update: false, delete: false },
+  };
 }
 
 // Kept on globalThis so `loadStore()`'s vi.resetModules() cannot split the test's `db` from the store's.
@@ -104,8 +113,40 @@ class Query implements PromiseLike<Result> {
   }
 }
 
+/** `profile`: select → maybeSingle, update → select → single. */
+class ProfileQuery implements PromiseLike<Result> {
+  private patch: Partial<ProfileRow> | null = null;
+
+  select() {
+    return this;
+  }
+  update(values: Partial<ProfileRow>) {
+    this.patch = values;
+    return this;
+  }
+  eq() {
+    return this;
+  }
+  single() {
+    return this;
+  }
+  maybeSingle() {
+    return this;
+  }
+
+  then: PromiseLike<Result>['then'] = (onFulfilled, onRejected) => Promise.resolve(this.run()).then(onFulfilled, onRejected);
+
+  private run(): Result {
+    const op: Op = this.patch ? 'update' : 'select';
+    if (db.fail[op]) return { data: null, error: new Error(`${op} failed`) };
+    if (!db.userId) return { data: null, error: null };
+    if (this.patch) Object.assign(db.profile, this.patch);
+    return { data: { ...db.profile }, error: null };
+  }
+}
+
 const client = {
-  from: () => new Query(),
+  from: (table: string) => (table === 'profile' ? new ProfileQuery() : new Query()),
   auth: {
     onAuthStateChange(callback: (event: string, session: unknown) => void) {
       const session = db.userId ? { user: { id: db.userId, email: 'me@example.com', user_metadata: {} } } : null;
@@ -116,5 +157,4 @@ const client = {
   },
 };
 
-export const createClient = () => client;
 export const getClient = () => client;

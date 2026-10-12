@@ -136,14 +136,13 @@ a.plain:hover { color: inherit; }
   transition: width var(--dur-slow) var(--ease-standard);
 }
 .sidebar-head { display: flex; justify-content: flex-end; }
-/* Collapsed: icon-only rail — nav icons stay, section and hint hide */
+/* Collapsed: icon-only rail — each row keeps only its icon; section and hint hide */
 .sidebar.is-collapsed { width: var(--rail-w); }
 .sidebar.is-collapsed .sidebar-head { justify-content: center; }
 .sidebar.is-collapsed .sb-item { justify-content: center; padding: var(--space-0); }
-.sidebar.is-collapsed .sb-item-label,
+.sidebar.is-collapsed .sb-item > :not(.sb-item-icon),
 .sidebar.is-collapsed .sb-section,
-.sidebar.is-collapsed .sidebar-hint,
-.sidebar.is-collapsed .switch { display: none; }
+.sidebar.is-collapsed .sidebar-hint { display: none; }
 /* Collapsed switch: no room for the track, so "on" reads as a selected row */
 .sidebar.is-collapsed .sb-switch[aria-checked="true"] { background: var(--bg-selected); }
 @media (prefers-reduced-motion: reduce) {
@@ -318,15 +317,13 @@ a.plain:hover { color: inherit; }
   border: 1px solid var(--border-default); border-radius: var(--radius-8);
 }
 .mp-field:focus-within { border-color: var(--border-strong); }
-.mp-field input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: 400 14px/1 var(--font-sans); }
+.mp-field :is(input, textarea) { min-width: 0; border: 0; outline: 0; background: none; }
+.mp-field input { flex: 1; font: 400 14px/1 var(--font-sans); }
 .mp-field.is-multiline {
   flex-direction: column; align-items: stretch; height: auto; gap: var(--space-4);
   padding: var(--space-10) var(--space-12) var(--space-8) var(--space-14);
 }
-.mp-field textarea {
-  min-width: 0; border: 0; outline: 0; background: none; resize: none;
-  font: var(--type-body); color: var(--text-primary);
-}
+.mp-field textarea { resize: none; font: var(--type-body); color: var(--text-primary); }
 .mp-field textarea::placeholder { color: var(--text-placeholder); }
 .mp-field-count { align-self: flex-end; font-variant-numeric: tabular-nums; }
 .mp-multiline-form { display: flex; flex-direction: column; gap: var(--space-8); }

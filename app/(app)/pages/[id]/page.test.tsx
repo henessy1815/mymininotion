@@ -6,7 +6,6 @@ import { loadStore } from '@/test/store';
 import { db, pageRow } from '@/test/supabase';
 
 vi.mock('next/navigation', () => import('@/test/navigation'));
-vi.mock('@/lib/supabase/client', () => import('@/test/supabase'));
 
 async function renderPage({ content }: { content: string }) {
   db.rows.push(pageRow({ id: 'p1', content }));

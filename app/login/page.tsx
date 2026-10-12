@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
-import { CircleAlert } from 'lucide-react';
+import { Alert } from '@/components/ds';
 import { authActions, useAuth } from '@/lib/auth';
 
 const ERRORS: Record<string, string> = {
@@ -52,12 +52,7 @@ function Login() {
         </div>
 
         {error && (
-          <div className="alert" role="alert" style={{ marginTop: 28 }}>
-            <span className="alert-icon">
-              <CircleAlert size={16} />
-            </span>
-            <span>{error}</span>
-          </div>
+          <Alert style={{ marginTop: 28 }}>{error}</Alert>
         )}
 
         <div style={{ width: '100%', marginTop: error ? 12 : 36 }}>

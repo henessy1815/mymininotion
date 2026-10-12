@@ -1,17 +1,17 @@
 'use client';
 
 import { useLayoutEffect, useSyncExternalStore } from 'react';
+import { THEME_STORAGE_KEY } from './theme-script';
 
 /**
  * Color theme. The choice lives in localStorage and is applied as
  * `<html data-theme>`; tokens.css swaps the semantic tokens from there.
- * The inline script in app/layout.tsx applies it before first paint —
- * keep its storage key and fallback in sync with this file.
+ * `themeScript` (lib/theme-script.ts) applies it before first paint —
+ * keep its fallback in sync with `resolve()`.
  */
 
 export type Theme = 'light' | 'dark';
 
-export const THEME_STORAGE_KEY = 'mini-notion:theme';
 
 const listeners = new Set<() => void>();
 
@@ -66,7 +66,8 @@ export function useTheme(): Theme {
  */
 export function ThemeSync() {
   useLayoutEffect(() => {
-    if (document.documentElement.dataset.theme !== resolve()) apply(resolve());
+    const theme = resolve();
+    if (current() !== theme) apply(theme);
   }, []);
   return null;
 }

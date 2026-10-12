@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => import('@/test/navigation'));
-vi.mock('@/lib/supabase/client', () => import('@/test/supabase'));
 vi.mock('@/lib/auth', () => ({
   useAuth: () => ({ ready: true, user: { nickname: '테스터', email: 't@example.com', avatarUrl: null } }),
 }));

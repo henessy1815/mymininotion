@@ -178,7 +178,7 @@
 | --- | --- |
 | 전환 방식 | `<html data-theme="light\|dark">`. 다크 블록은 **semantic 토큰과 그림자만** 덮어쓴다. primitive는 그대로 |
 | 저장 | localStorage `mini-notion:theme`. 저장값이 없으면 OS 설정(`prefers-color-scheme`)을 따른다 |
-| 깜빡임 방지 | `app/layout.tsx` `<head>`의 인라인 스크립트가 첫 페인트 전에 `data-theme`을 넣는다 (`<html suppressHydrationWarning>`). 개발 모드 Strict Mode 재마운트가 속성을 지우면 `ThemeSync`가 다시 넣는다 |
+| 깜빡임 방지 | `app/layout.tsx` `<head>`의 인라인 스크립트(`lib/theme-script.ts`의 `themeScript`)가 첫 페인트 전에 `data-theme`을 넣는다 (`<html suppressHydrationWarning>`). 개발 모드 Strict Mode 재마운트가 속성을 지우면 `ThemeSync`가 다시 넣는다 |
 | 상태 읽기·변경 | `useTheme()` → `'light' \| 'dark'`, `setTheme(theme)` (`lib/theme.ts`). 다른 탭 변경도 `storage` 이벤트로 반영 |
 | 네이티브 UI | `color-scheme: light \| dark`로 스크롤바·폼 컨트롤도 함께 바뀐다 |
 | 진입점 | 사이드바 하단 "다크 모드" 스위치 (§7.12). 모바일은 사이드바가 없어 OS 설정을 따른다 |
@@ -328,7 +328,7 @@
             └─ 화면별 콘텐츠 (가운데 정렬 + max-width)
 ```
 
-- **사이드바 접기/펼치기** (`AppShell`의 `useSidebarCollapsed`): `.sidebar-head`의 `IconButton`(`PanelLeftClose` "사이드바 접기" ↔ `PanelLeftOpen` "사이드바 펼치기", `aria-expanded`)을 누를 때마다 토글한다. 접히면 `.is-collapsed` → 폭 `--rail-w`(56px), 토글 버튼과 `.sidebar-nav` 아이콘만 가운데 정렬로 남고 `.sb-section`·`.sidebar-hint`·`.sb-item-label`은 숨긴다. 다크 모드 `SidebarSwitch`는 `Moon` 아이콘만 남고 스위치 트랙(`.switch`)을 숨기며, 켜짐 상태는 `--bg-selected` 배경으로 표시한다(섹션은 언마운트하지 않아 "최근 글" 펼침 상태 유지). 시트가 남은 폭을 채운다. 상태는 브라우저별 localStorage(`mini-notion:sidebar-collapsed`)에 기억하며 읽기·쓰기 실패 시 펼침이 기본. 모바일에서는 사이드바 자체가 숨겨지므로 해당 없음.
+- **사이드바 접기/펼치기** (`AppShell`의 `useSidebarCollapsed`): `.sidebar-head`의 `IconButton`(`PanelLeftClose` "사이드바 접기" ↔ `PanelLeftOpen` "사이드바 펼치기", `aria-expanded`)을 누를 때마다 토글한다. 접히면 `.is-collapsed` → 폭 `--rail-w`(56px), 토글 버튼과 `.sidebar-nav` 아이콘만 가운데 정렬로 남고 `.sb-section`·`.sidebar-hint`와 각 `.sb-item`의 아이콘(`.sb-item-icon`) 외 자식(라벨 등)은 숨긴다. 다크 모드 `SidebarSwitch`도 `Moon` 아이콘만 남아 스위치 트랙(`.switch`)이 숨겨지며, 켜짐 상태는 `--bg-selected` 배경으로 표시한다(섹션은 언마운트하지 않아 "최근 글" 펼침 상태 유지). 시트가 남은 폭을 채운다. 상태는 브라우저별 localStorage(`mini-notion:sidebar-collapsed`)에 기억하며 읽기·쓰기 실패 시 펼침이 기본. 모바일에서는 사이드바 자체가 숨겨지므로 해당 없음.
 - 로그인(`/login`)은 셸 밖이다. `.login-screen`이 카드 하나를 화면 중앙에 둔다.
 - 화면 헤더 구성: `[제목 or 뒤로가기+breadcrumb]` → `.spacer` → `[메타·상태]` → `.divider-v` → `[IconButton]`.
 
@@ -573,7 +573,7 @@ import { UserAvatar } from '@/components/shell';
 
 ### 7.9 DeleteDialog
 
-용도: 글 삭제 확인 (PRD #8). props: `title`, `onCancel`, `onConfirm`, `pending?`(요청 중 "삭제" disabled), `error?`(실패 문구 — 다이얼로그를 닫지 않고 설명 아래 `.alert`로 표시).
+용도: 글 삭제 확인 (PRD #8). props: `title`, `onCancel`, `onConfirm: () => Promise<void>`. 요청 중·실패 상태는 다이얼로그가 직접 관리한다 — `onConfirm`이 도는 동안 "삭제" disabled, 예외가 나면 닫지 않고 실패 문구를 보여 준다. 성공하면 호출한 쪽이 다이얼로그를 닫는다.
 
 | 요소 | 규칙 |
 | --- | --- |
@@ -581,7 +581,7 @@ import { UserAvatar } from '@/components/shell';
 | 제목 | 질문형 — "이 글을 삭제할까요?" (`--type-title`) |
 | 설명 | 대상 + 결과 — "‘{title}’ 글이 삭제됩니다. 삭제한 글은 복구할 수 없습니다." (`--type-body`, `--text-secondary`) |
 | 버튼 | 오른쪽 정렬, `secondary` "취소" → `danger` "삭제" (최소 폭 72px) |
-| 실패 | `error`가 있으면 설명 아래 `.alert.dialog-alert`(`margin-top: var(--space-16)`, `role="alert"`). 문구: "글을 삭제하지 못했어요. 다시 시도해 주세요." "삭제"를 다시 눌러 재시도 |
+| 실패 | `onConfirm`이 throw하면 설명 아래 `Alert className="dialog-alert"`(`margin-top: var(--space-16)`). 문구: "글을 삭제하지 못했어요. 다시 시도해 주세요." "삭제"를 다시 눌러 재시도 |
 | 닫기 | Esc, 배경 클릭 → `onCancel` |
 | 접근성 | `role="alertdialog"`, `aria-modal`, `aria-labelledby`, 확정 버튼에 `autoFocus` |
 
@@ -589,10 +589,11 @@ import { UserAvatar } from '@/components/shell';
 {pendingDelete && (
   <DeleteDialog
     title={displayTitle(pendingDelete.title)}
-    pending={deleting}
-    error={deleteFailed ? '글을 삭제하지 못했어요. 다시 시도해 주세요.' : undefined}
-    onCancel={closeDelete}
-    onConfirm={async () => { /* await actions.deletePage → 성공 시 닫기, 실패 시 deleteFailed */ }}
+    onCancel={() => setPendingDelete(null)}
+    onConfirm={async () => {
+      await actions.deletePage(pendingDelete.id); // throw → 다이얼로그가 실패 문구 표시
+      setPendingDelete(null);
+    }}
   />
 )}
 ```
@@ -605,7 +606,6 @@ import { UserAvatar } from '@/components/shell';
 | --- | --- |
 | `.command-box` / `.command-menu` / `.command-item` | `/page` 명령 입력창과 명령 제안 드롭다운 |
 | `.page-row` / `.page-link` / `.page-row-delete` | 업무 목록 행 (hover 시 삭제 버튼 노출) |
-| `.alert` | 연빨강 배경 오류 박스 (로그인·글 목록 불러오기·삭제 실패). 문구는 `.alert-text`(flex 1), 오른쪽에 sm secondary 버튼을 둘 수 있다. 위치 변형: `.list-alert`(업무 목록 자리, 가운데 정렬), `.dialog-alert`(다이얼로그 안) |
 | `.mp-field` + `.mp-field-hint` | 테두리 입력 필드 + 글자 수 `.meta` + 힌트/오류. 여러 줄은 `.is-multiline`(세로 쌓기, 높이 auto) + `.mp-field-count`(오른쪽 아래 글자 수), 제출 버튼은 `.mp-field-actions`(오른쪽 정렬) |
 | `.save-state` | 저장 중/저장됨/저장 실패 인디케이터 |
 | `.page-cover` | 글 상세 상단 커버. `data-state="loading\|loaded\|failed"`에 따라 `Skeleton` → 사진(`object-fit: cover`) → `--bg-accent-soft` 단색. 높이 고정이라 상태가 바뀌어도 레이아웃 이동 없음 |
@@ -645,6 +645,19 @@ import { UserAvatar } from '@/components/shell';
 
 ---
 
+### 7.13 Alert
+
+`<Alert action? className? style?>{문구}</Alert>` — `components/ds.tsx`. 연빨강 배경 오류 박스(`.alert`, `--bg-danger-soft`, `--radius-8`, `--type-caption`, `role="alert"`). `CircleAlert` 16(`.alert-icon`, `--text-danger`) + 문구 `.alert-text`(flex 1) + 선택적 `action`(오른쪽, sm secondary 버튼).
+
+- 간격은 놓이는 자리에서 `className`으로 준다: `.list-alert`(업무 목록 자리, `margin-top: var(--space-16)`, 가운데 정렬), `.dialog-alert`(다이얼로그 안, `margin-top: var(--space-16)`).
+- 사용처: 로그인 오류, 글 목록 불러오기 실패, 삭제 실패(`DeleteDialog`).
+
+```tsx
+<Alert className="list-alert" action={<Button variant="secondary" size="sm" onClick={retry}>다시 시도</Button>}>
+  글 목록을 불러오지 못했어요. 다시 시도해 주세요.
+</Alert>
+```
+
 ## 8. 화면 패턴
 
 화면 ID는 코드 주석 기준 (`1a`–`1i`).
@@ -663,7 +676,7 @@ import { UserAvatar } from '@/components/shell';
 - 헤더: "업무"(`.sheet-title`) + 글 수(`.sheet-count`, d-only) · spacer · "최근 작성순"(`.meta`, d-only). 모바일은 로고 마크 + 검색 `IconButton` + 아바타 링크.
 - 본문 최대폭 760px: `CommandInput`(`.command-box`, `SquarePen` + 입력 + `Kbd Enter`) → 글 목록.
 - 목록 행: 아이콘(`FileText`/제목 없으면 `File` + placeholder 색) + 제목(600 14px, 없으면 "제목 없음" 500 + tertiary) + `.meta` 작성 일시 + hover 시 `Trash2`. 정렬은 작성 시각 내림차순 (`page` 테이블에 수정 시각 컬럼이 없다).
-- 목록은 Supabase에서 불러온다. 준비 전에는 목록 자리를 비워 두고(빈 상태가 깜빡이지 않게), 실패하면 `.alert.list-alert` "글 목록을 불러오지 못했어요. 다시 시도해 주세요." + sm secondary "다시 시도".
+- 목록은 Supabase에서 불러온다. 준비 전에는 목록 자리를 비워 두고(빈 상태가 깜빡이지 않게), 실패하면 `Alert className="list-alert"` "글 목록을 불러오지 못했어요. 다시 시도해 주세요." + sm secondary "다시 시도".
 - `/page` 실행 중에는 Enter를 다시 받지 않는다(중복 생성 방지). 만들지 못하면 `.command-error` "새 글을 만들지 못했어요. 다시 시도해 주세요.". 실행할 때 입력값을 비워 명령 메뉴를 닫는다(메뉴가 오류 문구를 덮지 않게).
 - 1d 빈 상태: 보라 일러스트 박스(128×104) → "첫 글을 만들어 보세요" → `Kbd`가 섞인 안내문.
 
@@ -703,7 +716,7 @@ import { UserAvatar } from '@/components/shell';
 | 로딩 | 영역을 채우는 콘텐츠(이미지 등)는 같은 크기의 `Skeleton`(§7.11). 그 외에는 `LoaderCircle size={15} className="spin"` + 짧은 라벨. 초기 데이터 준비 전에는 빈 셸(`<div className="app" />`)이나 `null`을 렌더 |
 | 저장 상태 | `저장 중…`(spin) → `저장됨`(`Check`) / `저장 실패`(`CircleAlert`, 빨강 600) + sm secondary "다시 시도" |
 | 삭제 확인 | `DeleteDialog` (§7.9) |
-| 오류 (폼·화면) | `.alert` + `role="alert"` |
+| 오류 (폼·화면) | `Alert` (`role="alert"`) |
 | 오류 (한 줄) | `--text-danger` 텍스트 (`.command-error`, `.mp-field-hint.is-error`) |
 | 제목 없음 | `displayTitle()`로 "제목 없음" 표시 + `--text-tertiary`/`--text-placeholder` + 굵기 낮춤 |
 
@@ -831,7 +844,7 @@ import { UserAvatar } from '@/components/shell';
 
 ## 11. 새 UI를 만들 때 체크리스트
 
-- [ ] 기존 DS 컴포넌트(`Button`, `IconButton`, `Kbd`, `SidebarItem`, `SidebarSwitch`, `UserAvatar`, `SearchBox`, `DeleteDialog`)로 해결 가능한지 먼저 확인했다.
+- [ ] 기존 DS 컴포넌트(`Alert`, `Button`, `IconButton`, `Kbd`, `SidebarItem`, `SidebarSwitch`, `UserAvatar`, `SearchBox`, `DeleteDialog`)로 해결 가능한지 먼저 확인했다.
 - [ ] 색은 semantic 토큰(`--bg-*`, `--text-*`, `--border-*`)만 썼다. hex·rgba·primitive 직접 참조가 없다.
 - [ ] 글자는 `font: var(--type-*)` 역할 토큰으로 지정했다. 스케일 밖 크기가 필요하면 이유가 있다.
 - [ ] 간격은 `var(--space-*)`, 모서리는 `var(--radius-*)`, 높이는 `--control-*`/`--row-h`를 썼다.
@@ -871,9 +884,9 @@ import { UserAvatar } from '@/components/shell';
 | --- | --- |
 | `app/styles/tokens.css` | 디자인 토큰 (colors / typography / spacing / effects / base) |
 | `app/globals.css` | 리셋, DS 클래스, 화면별 스타일, 모바일 미디어 쿼리 |
-| `app/layout.tsx` | Pretendard 로딩, `lang="ko"`, 메타데이터(title "미니 노션"), 테마 인라인 스크립트 + `ThemeSync` |
+| `app/layout.tsx` | Pretendard 로딩, `lang="ko"`, 메타데이터(title "미니 노션"), 테마 인라인 스크립트(`themeScript`) + `ThemeSync` |
 | `app/fonts/PretendardVariable.woff2` | 폰트 파일 |
-| `components/ds.tsx` | `Avatar`, `Button`, `IconButton`, `Kbd`, `SearchPill`, `SidebarItem`, `SidebarSection`, `SidebarSwitch`, `Skeleton` |
+| `components/ds.tsx` | `Alert`, `Avatar`, `Button`, `IconButton`, `Kbd`, `SearchPill`, `SidebarItem`, `SidebarSection`, `SidebarSwitch`, `Skeleton` |
 | `components/shell.tsx` | `AppShell`(사이드바 접기/펼치기, 내부 `ThemeToggle`), `SearchBox`, `DeleteDialog`, `UserAvatar` |
 | `app/(app)/layout.tsx` | 인증 화면을 `AppShell`로 감쌈 |
 | `app/(app)/page.tsx` | 업무 페이지 + `CommandInput` (1c/1d/1h) |
@@ -885,6 +898,7 @@ import { UserAvatar } from '@/components/shell';
 | `lib/text.ts` | 글자 수 계산 (`countCharacters`, grapheme 단위) |
 | `lib/store.ts` | 글 데이터 레이어 — Supabase `page` 테이블, 로그인 사용자의 글만 (RLS: `supabase/migrations/20261012000000_page_rls.sql`) |
 | `lib/theme.ts` | 라이트/다크 테마 (`useTheme`, `setTheme`, `ThemeSync`) — localStorage `mini-notion:theme` |
+| `lib/theme-script.ts` | 테마 저장 키(`THEME_STORAGE_KEY`)와 첫 페인트 전 적용 스크립트(`themeScript`). `'use client'`가 아니라 서버 레이아웃이 그대로 인라인한다 |
 | `lib/auth.ts` | 로그인 사용자 (`useAuth`, `authActions`) — Supabase Auth(Google) + `profile` 테이블(`name`, `introduction`) |
 | `lib/supabase/client.ts` | 브라우저 전용 Supabase 클라이언트 — 세션을 localStorage에 저장 (PKCE). 앱 전체가 `getClient()` 하나를 공유 |
 | `app/auth/callback/page.tsx` | OAuth 콜백: 브라우저에서 code 교환 (`?error=cancelled` · `failed`) |

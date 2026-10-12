@@ -29,8 +29,6 @@ let snapshot: AuthSnapshot = SERVER_SNAPSHOT;
 let userId: string | null = null;
 const listeners = new Set<() => void>();
 
-const client = getClient;
-
 function emit(next: AuthSnapshot) {
   snapshot = next;
   listeners.forEach((l) => l());
@@ -45,7 +43,7 @@ async function loadUser(session: Session | null) {
   // Token refreshes re-fire the listener; the profile has not changed.
   if (session.user.id === userId && snapshot.user) return;
   userId = session.user.id;
-  const { data } = await client()
+  const { data } = await getClient()
     .from('profile')
     .select('name, introduction')
     .eq('user_id', session.user.id)
@@ -67,7 +65,7 @@ function start() {
   if (started) return;
   started = true;
   // Fires INITIAL_SESSION right away, then on every sign-in/out (also from other tabs).
-  client().auth.onAuthStateChange((_event, session) => {
+  getClient().auth.onAuthStateChange((_event, session) => {
     // Supabase calls listeners while holding its auth lock; querying inside would deadlock.
     setTimeout(() => void loadUser(session), 0);
   });
@@ -89,10 +87,33 @@ export function useAuth(): AuthSnapshot {
   );
 }
 
+type ProfileRow = { name: string | null; introduction: string | null };
+
+/**
+ * Updates one column of the signed-in user's profile, then merges the saved
+ * value into the user. Throws when the update fails — callers show the error state.
+ */
+async function updateProfile(
+  patch: Partial<ProfileRow>,
+  column: keyof ProfileRow,
+  toUser: (row: Partial<ProfileRow>) => Partial<User>,
+) {
+  if (!snapshot.user || !userId) return;
+  // RLS turns a blocked update into "0 rows, no error"; .single() makes that an error too.
+  const { data, error } = await getClient()
+    .from('profile')
+    .update(patch)
+    .eq('user_id', userId)
+    .select(column)
+    .single<Partial<ProfileRow>>();
+  if (error) throw error;
+  if (snapshot.user) emit({ ready: true, user: { ...snapshot.user, ...toUser(data) } });
+}
+
 export const authActions = {
   /** Leaves the app for Google; returns only when the redirect could not start. */
   async signInWithGoogle() {
-    const { error } = await client().auth.signInWithOAuth({
+    const { error } = await getClient().auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
@@ -101,38 +122,20 @@ export const authActions = {
 
   /** Finishes the PKCE flow on /auth/callback; the verifier is in localStorage. */
   async exchangeCode(code: string) {
-    const { error } = await client().auth.exchangeCodeForSession(code);
+    const { error } = await getClient().auth.exchangeCodeForSession(code);
     if (error) throw error;
   },
 
   async signOut() {
-    await client().auth.signOut();
+    await getClient().auth.signOut();
   },
 
-  /** Throws when the update fails — callers show the error state. */
-  async updateNickname(nickname: string) {
-    if (!snapshot.user || !userId) return;
-    // RLS turns a blocked update into "0 rows, no error"; .single() makes that an error too.
-    const { data, error } = await client()
-      .from('profile')
-      .update({ name: nickname })
-      .eq('user_id', userId)
-      .select('name')
-      .single();
-    if (error) throw error;
-    emit({ ready: true, user: { ...snapshot.user, nickname: data.name } });
+  updateNickname(nickname: string) {
+    return updateProfile({ name: nickname }, 'name', (row) => ({ nickname: row.name ?? '' }));
   },
 
-  /** Throws when the update fails — callers show the error state. '' clears it. */
-  async updateIntroduction(introduction: string) {
-    if (!snapshot.user || !userId) return;
-    const { data, error } = await client()
-      .from('profile')
-      .update({ introduction })
-      .eq('user_id', userId)
-      .select('introduction')
-      .single();
-    if (error) throw error;
-    emit({ ready: true, user: { ...snapshot.user, introduction: data.introduction ?? '' } });
+  /** '' clears it. */
+  updateIntroduction(introduction: string) {
+    return updateProfile({ introduction }, 'introduction', (row) => ({ introduction: row.introduction ?? '' }));
   },
 };

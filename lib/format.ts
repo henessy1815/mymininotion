@@ -3,7 +3,7 @@ import type { CharCount } from '@/lib/text';
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 /** 9/28(월) */
-export function formatDate(ts: number) {
+function formatDate(ts: number) {
   const d = new Date(ts);
   return `${d.getMonth() + 1}/${d.getDate()}(${WEEKDAYS[d.getDay()]})`;
 }

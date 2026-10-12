@@ -34,8 +34,6 @@ function Editor({ page, onDeleted }: { page: Page; onDeleted: () => void }) {
   const [content, setContent] = useState(page.content);
   const [status, setStatus] = useState<SaveStatus>('saved');
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteFailed, setDeleteFailed] = useState(false);
 
   const draft = useRef({ title: page.title, content: page.content });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -88,21 +86,9 @@ function Editor({ page, onDeleted }: { page: Page; onDeleted: () => void }) {
   const remove = async () => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
-    setDeleting(true);
-    setDeleteFailed(false);
-    try {
-      await actions.deletePage(page.id);
-      onDeleted();
-      router.replace('/');
-    } catch {
-      setDeleteFailed(true);
-      setDeleting(false);
-    }
-  };
-
-  const closeDelete = () => {
-    setConfirmDelete(false);
-    setDeleteFailed(false);
+    await actions.deletePage(page.id);
+    onDeleted();
+    router.replace('/');
   };
 
   return (
@@ -171,10 +157,8 @@ function Editor({ page, onDeleted }: { page: Page; onDeleted: () => void }) {
       {confirmDelete && (
         <DeleteDialog
           title={displayTitle(title)}
-          pending={deleting}
-          error={deleteFailed ? '글을 삭제하지 못했어요. 다시 시도해 주세요.' : undefined}
-          onCancel={closeDelete}
-          onConfirm={() => void remove()}
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={remove}
         />
       )}
     </>
