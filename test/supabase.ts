@@ -1,7 +1,7 @@
 /**
  * In-memory double for `@/lib/supabase/client`, covering only the query
  * shapes `lib/store.ts` uses on the `page` table and `lib/auth.ts` uses on
- * the `profile` table. Like Supabase with RLS, every query only sees the
+ * the `profile` table and the `profile-image` Storage bucket. Like Supabase with RLS, every query only sees the
  * signed-in user's rows. test/setup.ts registers it for every test file.
  *
  * Usage in a test file:
@@ -9,15 +9,16 @@
  *   db.rows.push(pageRow({ id: 'p1' }));
  *   db.profile.introduction = '소개';
  *   db.fail.update = true; // next updates resolve with an error
+ *   db.files; // object paths in the profile-image bucket
  */
 
 export type PageRow = { id: string; created_at: string; title: string | null; content: string | null; user_id: string };
-type Op = 'select' | 'insert' | 'update' | 'delete';
+type Op = 'select' | 'insert' | 'update' | 'delete' | 'upload';
 
 /** The signed-in user's `profile` row (the double has only that one). */
-export type ProfileRow = { name: string | null; introduction: string | null };
+export type ProfileRow = { name: string | null; introduction: string | null; image_path: string | null };
 
-type DbState = { userId: string | null; rows: PageRow[]; profile: ProfileRow; fail: Record<Op, boolean> };
+type DbState = { userId: string | null; rows: PageRow[]; profile: ProfileRow; files: string[]; fail: Record<Op, boolean> };
 
 export const SIGNED_IN_USER = 'user-1';
 
@@ -25,8 +26,9 @@ function initialState(): DbState {
   return {
     userId: SIGNED_IN_USER,
     rows: [],
-    profile: { name: '고양이', introduction: null },
-    fail: { select: false, insert: false, update: false, delete: false },
+    profile: { name: '고양이', introduction: null, image_path: null },
+    files: [],
+    fail: { select: false, insert: false, update: false, delete: false, upload: false },
   };
 }
 
@@ -145,8 +147,23 @@ class ProfileQuery implements PromiseLike<Result> {
   }
 }
 
+/** `storage.from(bucket)`: upload (no upsert) and remove. */
+const bucket = {
+  async upload(path: string) {
+    if (db.fail.upload) return { data: null, error: new Error('upload failed') };
+    if (db.files.includes(path)) return { data: null, error: new Error('The resource already exists') };
+    db.files.push(path);
+    return { data: { path }, error: null };
+  },
+  async remove(paths: string[]) {
+    db.files = db.files.filter((f) => !paths.includes(f));
+    return { data: [], error: null };
+  },
+};
+
 const client = {
   from: (table: string) => (table === 'profile' ? new ProfileQuery() : new Query()),
+  storage: { from: () => bucket },
   auth: {
     onAuthStateChange(callback: (event: string, session: unknown) => void) {
       const session = db.userId ? { user: { id: db.userId, email: 'me@example.com', user_metadata: {} } } : null;

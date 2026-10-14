@@ -425,7 +425,7 @@
 | 모바일 뒤로가기 | 22 |
 | 빈 상태·NotFound 일러스트 | 40 (`strokeWidth={1.5}`) |
 
-**사용 중인 아이콘과 의미**: `LayoutList`(업무 페이지) · `CircleUserRound`(마이 페이지) · `FileText`(제목 있는 글) · `File`(제목 없는 글) · `FilePlus`(`/page` 명령) · `SquarePen`(명령 입력창) · `Search` · `Trash2`(삭제) · `ChevronLeft`(뒤로) · `ChevronDown`(섹션 접기) · `PanelLeftClose`/`PanelLeftOpen`(사이드바 접기/펼치기) · `Check`(저장됨) · `LoaderCircle`(저장 중·로그인 중) · `CircleAlert`(오류) · `FileX`(글 없음) · `LogOut` · `Moon`(다크 모드)
+**사용 중인 아이콘과 의미**: `LayoutList`(업무 페이지) · `CircleUserRound`(마이 페이지) · `FileText`(제목 있는 글) · `File`(제목 없는 글) · `FilePlus`(`/page` 명령) · `SquarePen`(명령 입력창) · `Search` · `Trash2`(삭제) · `ChevronLeft`(뒤로) · `ChevronDown`(섹션 접기) · `PanelLeftClose`/`PanelLeftOpen`(사이드바 접기/펼치기) · `Check`(저장됨) · `LoaderCircle`(저장 중·로그인 중) · `CircleAlert`(오류) · `FileX`(글 없음) · `LogOut` · `Moon`(다크 모드) · `ImageUp`(프로필 사진 올리기·변경)
 
 ---
 
@@ -606,7 +606,7 @@ import { UserAvatar } from '@/components/shell';
 | --- | --- |
 | `.command-box` / `.command-menu` / `.command-item` | `/page` 명령 입력창과 명령 제안 드롭다운 |
 | `.page-row` / `.page-link` / `.page-row-delete` | 업무 목록 행 (hover 시 삭제 버튼 노출) |
-| `.mp-field` + `.mp-field-hint` | 테두리 입력 필드 + 글자 수 `.meta` + 힌트/오류. 여러 줄은 `.is-multiline`(세로 쌓기, 높이 auto) + `.mp-field-count`(오른쪽 아래 글자 수), 제출 버튼은 `.mp-field-actions`(오른쪽 정렬) |
+| `.mp-field` + `.mp-field-hint` | 테두리 입력 필드 + 글자 수 `.meta` + 힌트/오류(`.is-error`)/진행 중(`.is-pending`, 아이콘 + 문구 inline-flex). 여러 줄은 `.is-multiline`(세로 쌓기, 높이 auto) + `.mp-field-count`(오른쪽 아래 글자 수), 제출 버튼은 `.mp-field-actions`(오른쪽 정렬) |
 | `.save-state` | 저장 중/저장됨/저장 실패 인디케이터 |
 | `.page-cover` | 글 상세 상단 커버. `data-state="loading\|loaded\|failed"`에 따라 `Skeleton` → 사진(`object-fit: cover`) → `--bg-accent-soft` 단색. 높이 고정이라 상태가 바뀌어도 레이아웃 이동 없음 |
 | `.editor-count` | 에디터 본문 아래 글자 수 (`.meta`와 함께 사용, `margin-top: var(--space-12)`, `tabular-nums`) |
@@ -698,7 +698,7 @@ import { UserAvatar } from '@/components/shell';
 
 | 섹션 | 구성 |
 | --- | --- |
-| 프로필 이미지 | `UserAvatar` 80만 표시 (Google 프로필 사진, 없으면 이니셜). 변경 기능 없음 — `profile`에 이미지 컬럼이 없다 |
+| 프로필 이미지 | `UserAvatar` 80 + `.mp-avatar-actions`(secondary "사진 올리기"/올린 뒤 "사진 변경"(`ImageUp`) + `.meta` "JPG · PNG · WEBP, 5MB 이하") + 숨긴 `input[type=file]`. 형식·용량은 올리기 전에 검사해 `.mp-field-hint.is-error`로 알리고, 올리는 동안 버튼 disabled + `.mp-field-hint.is-pending`(`LoaderCircle` 15 spin "사진을 올리는 중…", `role="status"`). Storage 버킷 `profile-image`에 uuidv4 파일명으로 올리고 `profile.image_path`에 파일명만 저장, URL 앞부분은 `NEXT_PUBLIC_PROFILE_IMAGE_BASE_URL` (`lib/profile-image.ts`). 올린 이미지가 없으면 Google 프로필 사진, 그것도 없으면 이니셜 |
 | 별명 | `.mp-field`(글자 수 `n/20` `.meta`) + primary lg "저장" + 힌트/오류 |
 | 자기소개 | `.mp-field.is-multiline`(4줄 `textarea`, `--type-body`, 오른쪽 아래 `n/200` `.meta`) → 오른쪽 정렬 primary lg "저장" + 힌트/오류. 앞뒤 공백 제거 후 저장, 빈 값 저장 = 삭제. `profile.introduction`에 저장 |
 | 계정 | `.google-mark-lg` + 이메일 + "Google 계정으로 로그인됨" + secondary "로그아웃"(`LogOut`) |
@@ -738,7 +738,7 @@ import { UserAvatar } from '@/components/shell';
 
 | 종류 | 규칙 | 실제 예 |
 | --- | --- | --- |
-| 버튼 | 2~6자, 동사 명사형 또는 "~로" 목적지형 | 저장 · 삭제 · 취소 · 다시 시도 · 로그아웃 · 업무 페이지로 · Google로 로그인 |
+| 버튼 | 2~6자, 동사 명사형 또는 "~로" 목적지형 | 저장 · 삭제 · 취소 · 다시 시도 · 로그아웃 · 사진 올리기 · 사진 변경 · 업무 페이지로 · Google로 로그인 |
 | 상태 | 명사형, 마침표 없음 | 저장 중… · 저장됨 · 저장 실패 · 로그인 중… · Google 계정으로 로그인됨 |
 | 확인 질문 | "~할까요?" | 이 글을 삭제할까요? |
 | 빈 상태 제목 | 권유형 "~해 보세요" | 첫 글을 만들어 보세요 |
@@ -760,6 +760,9 @@ import { UserAvatar } from '@/components/shell';
 | 별명 저장 실패 | 별명을 저장하지 못했어요. 다시 시도해 주세요. |
 | 자기소개 저장 성공 / 비워서 저장 | 자기소개를 저장했어요. / 자기소개를 지웠어요. |
 | 자기소개 저장 실패 | 자기소개를 저장하지 못했어요. 다시 시도해 주세요. |
+| 프로필 이미지 변경 성공 | 프로필 이미지를 바꿨어요. |
+| 프로필 이미지 형식·용량 초과 | JPG · PNG · WEBP 이미지만 올릴 수 있어요. 다른 사진을 골라 주세요. / 5MB 이하 사진만 올릴 수 있어요. 다른 사진을 골라 주세요. |
+| 프로필 이미지 변경 실패 | 프로필 이미지를 바꾸지 못했어요. 다시 시도해 주세요. |
 | 글 없음 | 글을 찾을 수 없어요 / 삭제되었거나 접근할 수 없는 글이에요. |
 | 글 목록 불러오기 실패 | 글 목록을 불러오지 못했어요. 다시 시도해 주세요. |
 | 새 글 만들기 실패 | 새 글을 만들지 못했어요. 다시 시도해 주세요. |
@@ -793,7 +796,7 @@ import { UserAvatar } from '@/components/shell';
 | 펼침 상태 | `SidebarSection` `aria-expanded`, 사이드바 접기/펼치기 버튼 `aria-expanded` |
 | 켜짐 상태 | `SidebarSwitch` `role="switch"` + `aria-checked` |
 | 랜드마크 | `header.topbar`, `nav.sidebar aria-label="사이드바"`, `main.sheet` |
-| 입력 이름 | 모든 입력에 `aria-label` (명령어 입력, 글 제목 검색, 제목, 내용, 별명, 자기소개) |
+| 입력 이름 | 모든 입력에 `aria-label` (명령어 입력, 글 제목 검색, 제목, 내용, 별명, 자기소개, 프로필 이미지 파일) |
 | 상태 알림 | `SaveState` `role="status"` / 실패 `role="alert"`, `.alert` `role="alert"` |
 | 보조 설명 | 내용 `textarea`의 `aria-describedby` → 글자 수 (라이브 영역 아님, 입력마다 낭독하지 않음) |
 | 장식 이미지 | 글 커버는 `aria-hidden="true"` + `alt=""`, 포커스를 받지 않음 |
@@ -899,7 +902,8 @@ import { UserAvatar } from '@/components/shell';
 | `lib/store.ts` | 글 데이터 레이어 — Supabase `page` 테이블, 로그인 사용자의 글만 (RLS: `supabase/migrations/20261012000000_page_rls.sql`) |
 | `lib/theme.ts` | 라이트/다크 테마 (`useTheme`, `setTheme`, `ThemeSync`) — localStorage `mini-notion:theme` |
 | `lib/theme-script.ts` | 테마 저장 키(`THEME_STORAGE_KEY`)와 첫 페인트 전 적용 스크립트(`themeScript`). `'use client'`가 아니라 서버 레이아웃이 그대로 인라인한다 |
-| `lib/auth.ts` | 로그인 사용자 (`useAuth`, `authActions`) — Supabase Auth(Google) + `profile` 테이블(`name`, `introduction`) |
+| `lib/auth.ts` | 로그인 사용자 (`useAuth`, `authActions`) — Supabase Auth(Google) + `profile` 테이블(`name`, `introduction`, `image_path`) |
+| `lib/profile-image.ts` | 프로필 이미지 규칙 — 버킷 `profile-image`, 5MB·JPG/PNG/WEBP 검사, uuidv4 경로, `NEXT_PUBLIC_PROFILE_IMAGE_BASE_URL` + `image_path` → URL (정책: `supabase/migrations/20261013000000_profile_image.sql`) |
 | `lib/supabase/client.ts` | 브라우저 전용 Supabase 클라이언트 — 세션을 localStorage에 저장 (PKCE). 앱 전체가 `getClient()` 하나를 공유 |
 | `app/auth/callback/page.tsx` | OAuth 콜백: 브라우저에서 code 교환 (`?error=cancelled` · `failed`) |
 

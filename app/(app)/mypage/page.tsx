@@ -1,11 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { LogOut } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { ImageUp, LoaderCircle, LogOut } from 'lucide-react';
 import { Button } from '@/components/ds';
 import { UserAvatar } from '@/components/shell';
 import { authActions, useAuth, type User } from '@/lib/auth';
+import { checkProfileImage, PROFILE_IMAGE_MAX_BYTES, PROFILE_IMAGE_TYPES, type ProfileImageProblem } from '@/lib/profile-image';
 
 const NICKNAME_MAX = 20;
 const INTRODUCTION_MAX = 200;
@@ -34,16 +35,73 @@ export default function MyPage() {
   );
 }
 
+type UploadState = 'idle' | 'uploading' | 'saved' | 'failed' | ProfileImageProblem;
+
+const MAX_MB = PROFILE_IMAGE_MAX_BYTES / 1024 / 1024;
+
+/** Picks an image, checks type/size, uploads it to Storage and saves its path to `profile.image_path`. */
 function AvatarSection({ user }: { user: User }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [state, setState] = useState<UploadState>('idle');
+  const uploading = state === 'uploading';
+
+  const upload = async (file: File) => {
+    const problem = checkProfileImage(file);
+    if (problem) {
+      setState(problem);
+      return;
+    }
+    setState('uploading');
+    try {
+      await authActions.updateProfileImage(file);
+      setState('saved');
+    } catch {
+      setState('failed');
+    }
+  };
+
   return (
     <section className="mp-section">
       <div className="mp-head">
         <span className="mp-head-title">프로필 이미지</span>
-        <span className="mp-head-desc">Google 계정의 프로필 사진이 표시돼요.</span>
+        <span className="mp-head-desc">화면 상단 프로필에 표시돼요. 올리지 않으면 Google 계정의 프로필 사진이 표시돼요.</span>
       </div>
       <div className="mp-avatar-row">
         <UserAvatar user={user} size={80} />
+        <div className="mp-avatar-actions">
+          <Button variant="secondary" icon={ImageUp} disabled={uploading} onClick={() => inputRef.current?.click()}>
+            {user.imagePath ? '사진 변경' : '사진 올리기'}
+          </Button>
+          <span className="meta">JPG · PNG · WEBP, {MAX_MB}MB 이하</span>
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept={PROFILE_IMAGE_TYPES.join(',')}
+          aria-label="프로필 이미지 파일"
+          hidden
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            // Lets the same file be picked again after an error.
+            e.target.value = '';
+            if (file) void upload(file);
+          }}
+        />
       </div>
+      {uploading && (
+        <span className="mp-field-hint is-pending" role="status">
+          <LoaderCircle size={15} className="spin" />
+          사진을 올리는 중…
+        </span>
+      )}
+      {state === 'saved' && <span className="mp-field-hint">프로필 이미지를 바꿨어요.</span>}
+      {state === 'type' && (
+        <span className="mp-field-hint is-error">JPG · PNG · WEBP 이미지만 올릴 수 있어요. 다른 사진을 골라 주세요.</span>
+      )}
+      {state === 'size' && (
+        <span className="mp-field-hint is-error">{MAX_MB}MB 이하 사진만 올릴 수 있어요. 다른 사진을 골라 주세요.</span>
+      )}
+      {state === 'failed' && <span className="mp-field-hint is-error">프로필 이미지를 바꾸지 못했어요. 다시 시도해 주세요.</span>}
     </section>
   );
 }

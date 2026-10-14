@@ -3,20 +3,25 @@
 import { useSyncExternalStore } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { getClient } from '@/lib/supabase/client';
+import { newProfileImagePath, PROFILE_IMAGE_BUCKET, profileImageUrl } from '@/lib/profile-image';
 
 /**
  * Signed-in user, backed by Supabase Auth (Google) and the `profile` table.
  * The session is kept in localStorage (see `lib/supabase/client.ts`).
  * The profile row is created 1:1 by the `on_auth_user_created` trigger on
  * first sign-in, with `name` set from the auth user's Display Name (PRD #1).
- * The self-introduction is `profile.introduction`.
+ * The self-introduction is `profile.introduction`. An uploaded profile image
+ * is `profile.image_path` (see `lib/profile-image.ts`); without one the Google
+ * picture is shown.
  */
 
 export type User = {
   email: string;
   nickname: string;
-  /** Google profile picture from the auth session; null → initials. */
+  /** Uploaded image, else the Google picture from the auth session; null → initials. */
   avatarUrl: string | null;
+  /** `profile.image_path`; null when nothing was uploaded. */
+  imagePath: string | null;
   /** `profile.introduction`; '' when not set. */
   introduction: string;
 };
@@ -27,6 +32,7 @@ const SERVER_SNAPSHOT: AuthSnapshot = { ready: false, user: null };
 
 let snapshot: AuthSnapshot = SERVER_SNAPSHOT;
 let userId: string | null = null;
+let googleAvatarUrl: string | null = null;
 const listeners = new Set<() => void>();
 
 function emit(next: AuthSnapshot) {
@@ -45,16 +51,19 @@ async function loadUser(session: Session | null) {
   userId = session.user.id;
   const { data } = await getClient()
     .from('profile')
-    .select('name, introduction')
+    .select('name, introduction, image_path')
     .eq('user_id', session.user.id)
     .maybeSingle();
   const meta = session.user.user_metadata;
+  googleAvatarUrl = meta.avatar_url ?? meta.picture ?? null;
+  const imagePath = data?.image_path ?? null;
   emit({
     ready: true,
     user: {
       email: session.user.email ?? '',
       nickname: data?.name ?? meta.full_name ?? meta.name ?? '',
-      avatarUrl: meta.avatar_url ?? meta.picture ?? null,
+      avatarUrl: imagePath ? profileImageUrl(imagePath) : googleAvatarUrl,
+      imagePath,
       introduction: data?.introduction ?? '',
     },
   });
@@ -87,7 +96,7 @@ export function useAuth(): AuthSnapshot {
   );
 }
 
-type ProfileRow = { name: string | null; introduction: string | null };
+type ProfileRow = { name: string | null; introduction: string | null; image_path: string | null };
 
 /**
  * Updates one column of the signed-in user's profile, then merges the saved
@@ -137,5 +146,31 @@ export const authActions = {
   /** '' clears it. */
   updateIntroduction(introduction: string) {
     return updateProfile({ introduction }, 'introduction', (row) => ({ introduction: row.introduction ?? '' }));
+  },
+
+  /**
+   * Uploads `file` under a new uuidv4 name, points `profile.image_path` at it,
+   * then removes the previous upload. Callers validate the file first
+   * (`checkProfileImage`); the bucket rejects anything else anyway.
+   */
+  async updateProfileImage(file: File) {
+    if (!snapshot.user || !userId) return;
+    const previous = snapshot.user.imagePath;
+    const path = newProfileImagePath();
+    const storage = getClient().storage.from(PROFILE_IMAGE_BUCKET);
+    const { error } = await storage.upload(path, file, { contentType: file.type, upsert: false });
+    if (error) throw error;
+    try {
+      await updateProfile({ image_path: path }, 'image_path', (row) => {
+        const imagePath = row.image_path ?? null;
+        return { imagePath, avatarUrl: imagePath ? profileImageUrl(imagePath) : googleAvatarUrl };
+      });
+    } catch (e) {
+      // The profile still points at the previous image; drop the orphan.
+      await storage.remove([path]);
+      throw e;
+    }
+    // Best effort: a leftover old file is harmless, the profile no longer uses it.
+    if (previous) await storage.remove([previous]);
   },
 };
